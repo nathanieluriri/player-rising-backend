@@ -1,5 +1,6 @@
 
-from fastapi import APIRouter, HTTPException, Query, Path, status
+import time
+from fastapi import APIRouter, Body, HTTPException, Query, Path, status
 from typing import List, Optional
 import json
 from schemas.response_schema import APIResponse
@@ -25,9 +26,9 @@ router = APIRouter(prefix="/blogs", tags=["Blogs"])
 # ------------------------------
 @router.get("/", response_model=APIResponse[List[BlogOut]])
 async def list_blogs(
-    start: Optional[int] = Query(None, description="Start index for range-based pagination"),
-    stop: Optional[int] = Query(None, description="Stop index for range-based pagination"),
-    page_number: Optional[int] = Query(None, description="Page number for page-based pagination (0-indexed)"),
+    start: Optional[int] = Query(0, description="Start index for range-based pagination"),
+    stop: Optional[int] = Query(100, description="Stop index for range-based pagination"),
+    page_number: Optional[int] = Query(0, description="Page number for page-based pagination (0-indexed)"),
     # New: Filter parameter expects a JSON string
     filters: Optional[str] = Query(None, description="Optional JSON string of MongoDB filter criteria (e.g., '{\"field\": \"value\"}')")
 ):
@@ -104,8 +105,103 @@ async def get_blog_by_id(
 # Create a new Blog
 # ------------------------------
 # Uses BlogBase for input (correctly)
-@router.post("/", response_model=APIResponse[BlogOut], status_code=status.HTTP_201_CREATED)
-async def create_blog(payload: BlogBase):
+@router.post(
+    "/",
+    response_model=APIResponse[BlogOut],
+    status_code=status.HTTP_201_CREATED
+)
+async def create_blog(
+    payload: BlogBase = Body(
+        openapi_examples={
+            "Create_Full_Blog_With_Pagination": {
+                "summary": "Create a full multi-page blog article",
+                "description": (
+                    "This example shows creating a fully detailed blog entry, including "
+                    "pagination for multi-page articles."
+                ),
+                "value": {
+                    "title": "The Rise of Quantum Computing",
+                    "author": {
+                        "name": "Alice Quantum",
+                        "avatarUrl": "https://cdn.example.com/avatars/alice.png",
+                        "affiliation": "Quantum Labs Research"
+                    },
+                    "publishDate": "2025-01-04T10:32:00Z",
+                    "category": {
+                        "name": "Quantum Technology",
+                        "slug": "quantum-technology"
+                    },
+                    "featureImage": {
+                        "url": "https://cdn.example.com/images/quantum-feature.jpg",
+                        "altText": "Quantum computer room",
+                        "credit": "Photo by Quantum Labs"
+                    },
+                    "pagination": {
+                        "currentPage": 1,
+                        "totalPages": 4,
+                        "nextPageUrl": "/blog/quantum-computing?page=2",
+                        "prevPageUrl": None
+                    },
+                    "currentPageBody": [
+                        {
+                            "type": "text",
+                            "content": "Quantum computing represents a new paradigm in computation..."
+                        },
+                        {
+                            "type": "image",
+                            "url": "https://cdn.example.com/images/quantum-chip.png",
+                            "altText": "Quantum processor chip",
+                            "caption": "A close-up of a quantum processor."
+                        },
+                        {
+                            "type": "quote",
+                            "text": "Quantum computing will transform industries within the decade."
+                        },
+                        { "type": "divider" }
+                    ]
+                },
+            },
+
+            "Create_Standard_Blog_No_Pagination": {
+                "summary": "Create a single-page blog article",
+                "description": (
+                    "This example demonstrates creating a simple blog article without pagination. "
+                    "Most blog posts will follow this structure."
+                ),
+                "value": {
+                    "title": "Understanding Machine Learning Basics",
+                    "author": {
+                        "name": "John Doe",
+                        "avatarUrl": "https://cdn.example.com/avatars/john.png",
+                        "affiliation": "ML Academy"
+                    },
+                    "publishDate": "2025-01-10T09:00:00Z",
+                    "category": {
+                        "name": "Machine Learning",
+                        "slug": "machine-learning"
+                    },
+                    "featureImage": {
+                        "url": "https://cdn.example.com/images/ml-feature.jpg",
+                        "altText": "Machine learning visual",
+                        "credit": "Image by ML Academy"
+                    },
+                    "currentPageBody": [
+                        {
+                            "type": "text",
+                            "content": "Machine learning is a subset of artificial intelligence..."
+                        },
+                        {
+                            "type": "image",
+                            "url": "https://cdn.example.com/images/ml-model.png",
+                            "altText": "ML model diagram",
+                            "caption": "Diagram showing a simple ML model."
+                        }
+                    ]
+                }
+            }
+        }
+    )
+):
     """
     Creates a new Blog.
     """
@@ -122,10 +218,89 @@ async def create_blog(payload: BlogBase):
 # Update an existing Blog
 # ------------------------------
 # Uses PATCH for partial update (correctly)
-@router.patch("/{id}", response_model=APIResponse[BlogOut])
+@router.patch(
+    "/{id}",
+    response_model=APIResponse[BlogOut]
+)
 async def update_blog(
     id: str = Path(..., description="ID of the blog to update"),
-    payload: BlogUpdate = None
+    payload: BlogUpdate = Body(
+        openapi_examples={
+            "Full_Update_With_Pagination": {
+                "summary": "Full blog update including pagination",
+                "description": (
+                    "Comprehensive update example modifying title, author, category, "
+                    "feature image, pagination, and page body.\n\n"
+                    "⚠️ Pagination is optional but included here."
+                ),
+                "value": {
+                    "title": "AI in 2025: What’s New?",
+                    "author": {
+                        "name": "John Smith",
+                        "avatarUrl": "https://cdn.example.com/avatars/john.png",
+                        "affiliation": "FutureTech Journal"
+                    },
+                    "category": {
+                        "name": "Technology",
+                        "slug": "technology"
+                    },
+                    "featureImage": {
+                        "url": "https://cdn.example.com/images/ai2025.jpg",
+                        "altText": "Futuristic AI concept art",
+                        "credit": "Image by TechVision"
+                    },
+                    "pagination": {
+                        "currentPage": 1,
+                        "totalPages": 5,
+                        "nextPageUrl": "/blog/ai-2025?page=2",
+                        "prevPageUrl": None
+                    },
+                    "currentPageBody": [
+                        {
+                            "type": "text",
+                            "content": "Artificial Intelligence continues to evolve rapidly in 2025..."
+                        },
+                        {
+                            "type": "quote",
+                            "text": "AI has become a partner rather than a tool."
+                        },
+                        {
+                            "type": "divider"
+                        }
+                    ],
+                    "last_updated": int(time.time())
+                }
+            },
+
+            "Minimal_Update_No_Pagination": {
+                "summary": "Partial blog update without pagination",
+                "description": (
+                    "A minimal example updating only title, category, and body content. "
+                    "Pagination is omitted because it is optional."
+                ),
+                "value": {
+                    "title": "Updated: Understanding Neural Networks",
+                    "category": {
+                        "name": "Machine Learning",
+                        "slug": "machine-learning"
+                    },
+                    "currentPageBody": [
+                        {
+                            "type": "text",
+                            "content": "Neural networks are inspired by the structure of the human brain..."
+                        },
+                        {
+                            "type": "image",
+                            "url": "https://cdn.example.com/images/neural-diagram.png",
+                            "altText": "Neural network diagram",
+                            "caption": "A simple neural network structure."
+                        }
+                    ],
+                    "last_updated": int(time.time())
+                }
+            }
+        }
+    ),
 ):
     """
     Updates an existing Blog by its ID.

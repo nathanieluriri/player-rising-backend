@@ -96,7 +96,6 @@ class BlogUpdate(BaseModel):
     """Schema for updating an existing Blog entry (partial update via PATCH)."""
     # All fields are Optional to allow non-breaking partial updates
     state:Optional[BlogStatus]=BlogStatus.draft
-    slug: Optional[str] = None
     title: Optional[str] = None
     author: Optional[Author] = None
     publishDate: Optional[int] = None
