@@ -20,6 +20,55 @@ from services.blog_service import (
 
 router = APIRouter(prefix="/blogs", tags=["Blogs"])
 
+# ------------------------------
+# List Most Recent Blogs (with optional filters & pagination)
+# ------------------------------
+@router.get("/recent", response_model=APIResponse[List[BlogOut]])
+async def list_most_recent_blogs(
+    start: Optional[int] = Query(0, description="Start index for range-based pagination"),
+    stop: Optional[int] = Query(50, description="Stop index for range-based pagination"),
+    filters: Optional[str] = Query(None, description="Optional JSON string of MongoDB filter criteria (e.g., '{\"field\": \"value\"}')")
+):
+    """
+    Retrieves a list of the most recent Blogs, sorted by `date_created` descending.
+    Supports optional filtering and range-based pagination.
+    
+    - `start`/`stop`: Range-based pagination (like slicing)
+    - `filters`: JSON string of MongoDB query filters
+    """
+    parsed_filters = {}
+
+    # Parse filters if provided
+    if filters:
+        try:
+            parsed_filters = json.loads(filters)
+        except json.JSONDecodeError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid JSON format for 'filters' query parameter."
+            )
+
+    # Validate start/stop
+    if start is not None or stop is not None:
+        if start is None or stop is None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Both 'start' and 'stop' must be provided together.")
+        if stop < start:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="'stop' cannot be less than 'start'.")
+
+    # Retrieve items from DB (service layer should handle sorting by date_created descending)
+    items = await retrieve_blogs(
+        filters=parsed_filters,
+        start=start or 0,
+        stop=stop or 50,
+        sort_field="date_created",
+        sort_order=-1  # descending
+    )
+
+    detail_msg = f"Fetched blogs {start} to {stop} sorted by most recent"
+    if parsed_filters:
+        detail_msg += " (with filters applied)"
+
+    return APIResponse(status_code=200, data=items, detail=detail_msg)
 
 # ------------------------------
 # List Blogs (with pagination and filtering)
@@ -28,9 +77,9 @@ router = APIRouter(prefix="/blogs", tags=["Blogs"])
 async def list_blogs(
     start: Optional[int] = Query(0, description="Start index for range-based pagination"),
     stop: Optional[int] = Query(100, description="Stop index for range-based pagination"),
-    page_number: Optional[int] = Query(0, description="Page number for page-based pagination (0-indexed)"),
+   
     # New: Filter parameter expects a JSON string
-    filters: Optional[str] = Query(None, description="Optional JSON string of MongoDB filter criteria (e.g., '{\"field\": \"value\"}')")
+    filters: Optional[str] = Query('{"field":"value"}', description="Optional JSON string of MongoDB filter criteria (e.g., '{\"field\": \"value\"}')")
 ):
     """
     Retrieves a list of Blogs with pagination and optional filtering.
@@ -62,17 +111,6 @@ async def list_blogs(
         # Pass filters to the service layer
         items = await retrieve_blogs(filters=parsed_filters, start=start, stop=stop)
         return APIResponse(status_code=200, data=items, detail="Fetched successfully")
-
-    # Case 2: Use page_number if provided
-    elif page_number is not None:
-        if page_number < 0:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="'page_number' cannot be negative.")
-        
-        start_index = page_number * PAGE_SIZE
-        stop_index = start_index + PAGE_SIZE
-        # Pass filters to the service layer
-        items = await retrieve_blogs(filters=parsed_filters, start=start_index, stop=stop_index)
-        return APIResponse(status_code=200, data=items, detail=f"Fetched page {page_number} successfully")
 
     # Case 3: Default (no params)
     else:
@@ -110,14 +148,82 @@ async def get_blog_by_id(
     response_model=APIResponse[BlogOut],
     status_code=status.HTTP_201_CREATED
 )
+
 async def create_blog(
-    payload: BlogBase = Body(
+    payload: BlogBase = Body( # Using string "BlogBase" as placeholder
         openapi_examples={
-            "Create_Full_Blog_With_Pagination": {
+
+            # ----- 1. NEW: Create with Rich Styling & Alignment -----
+            "Create_With_Rich_Styling_And_Alignment": {
+                "summary": "Create a blog with rich text and alignment",
+                "description": (
+                    "This example shows a single-page blog using headings, text alignment, "
+                    "and styled (bold, italic) rich text content."
+                ),
+                "value": {
+                    "title": "My Styled Article",
+                    "author": {
+                        "name": "Jane Designer",
+                        "avatarUrl": "https://cdn.example.com/avatars/jane.png",
+                        "affiliation": "Design Weekly"
+                    },
+                    "category": {
+                        "name": "Juventus",
+                        "slug": "juventus"
+                    },
+                    "featureImage": {
+                        "url": "https://cdn.example.com/images/styled-feature.jpg",
+                        "altText": "Abstract design",
+                        "credit": "Photo by Jane"
+                    },
+                    "currentPageBody": [
+                        {
+                            "type": "heading",
+                            "level": 1,
+                            "align": "center",
+                            "content": [
+                                {"type": "text", "text": "This is a Centered Heading", "styles": {}}
+                            ]
+                        },
+                        {
+                            "type": "paragraph",
+                            "align": "left",
+                            "content": [
+                                {"type": "text", "text": "This is ", "styles": {}},
+                                {"type": "text", "text": "bold text", "styles": {"bold": True}},
+                                {"type": "text", "text": ", this is ", "styles": {}},
+                                {"type": "text", "text": "italic text", "styles": {"italic": True}},
+                                {"type": "text", "text": ", and this is ", "styles": {}},
+                                {"type": "text", "text": "bold and italic", "styles": {"bold": True, "italic": True}},
+                                {"type": "text", "text": ".", "styles": {}}
+                            ]
+                        },
+                        {
+                            "type": "image",
+                            "align": "center",
+                            "url": "https://cdn.example.com/images/centered-image.png",
+                            "altText": "A centered image",
+                            "caption": "This image is centered.",
+                            "previewWidth": 600,
+                            "previewHeight": 400
+                        },
+                        {
+                            "type": "quote",
+                            "align": "right",
+                            "content": [
+                                {"type": "text", "text": "A quote, aligned to the right.", "styles": {"italic": True}}
+                            ]
+                        }
+                    ]
+                }
+            },
+
+            # ----- 2. Full multi-page blog (UPDATED) -----
+            "Create_Full_Blog_With_Multiple_Pages": {
                 "summary": "Create a full multi-page blog article",
                 "description": (
-                    "This example shows creating a fully detailed blog entry, including "
-                    "pagination for multi-page articles."
+                    "This example demonstrates creating a detailed blog entry with multiple pages, "
+                    "using the new rich text models."
                 ),
                 "value": {
                     "title": "The Rise of Quantum Computing",
@@ -126,48 +232,63 @@ async def create_blog(
                         "avatarUrl": "https://cdn.example.com/avatars/alice.png",
                         "affiliation": "Quantum Labs Research"
                     },
-                    "publishDate": "2025-01-04T10:32:00Z",
                     "category": {
-                        "name": "Quantum Technology",
-                        "slug": "quantum-technology"
+                        "name": "Juventus",
+                        "slug": "juventus"
                     },
                     "featureImage": {
                         "url": "https://cdn.example.com/images/quantum-feature.jpg",
                         "altText": "Quantum computer room",
                         "credit": "Photo by Quantum Labs"
                     },
-                    "pagination": {
-                        "currentPage": 1,
-                        "totalPages": 4,
-                        "nextPageUrl": "/blog/quantum-computing?page=2",
-                        "prevPageUrl": None
-                    },
-                    "currentPageBody": [
+                    "pages": [
                         {
-                            "type": "text",
-                            "content": "Quantum computing represents a new paradigm in computation..."
+                            "pageNumber": 1,
+                            "pageBody": [
+                                {
+                                    "type": "paragraph",
+                                    "content": [
+                                        {"type": "text", "text": "Quantum computing represents a new paradigm...", "styles": {}}
+                                    ]
+                                },
+                                {
+                                    "type": "image",
+                                    "url": "https://cdn.example.com/images/quantum-chip.png",
+                                    "altText": "Quantum processor chip",
+                                    "caption": "Close-up of a quantum processor.",
+                                    "previewWidth": 500,
+                                    "previewHeight": 300
+                                },
+                                {
+                                    "type": "quote",
+                                    "content": [
+                                        {"type": "text", "text": "Quantum computing will transform industries.", "styles": {"italic": True}}
+                                    ]
+                                },
+                                {
+                                    "type": "divider"
+                                }
+                            ]
                         },
                         {
-                            "type": "image",
-                            "url": "https://cdn.example.com/images/quantum-chip.png",
-                            "altText": "Quantum processor chip",
-                            "caption": "A close-up of a quantum processor."
-                        },
-                        {
-                            "type": "quote",
-                            "text": "Quantum computing will transform industries within the decade."
-                        },
-                        { "type": "divider" }
+                            "pageNumber": 2,
+                            "pageBody": [
+                                {
+                                    "type": "paragraph",
+                                    "content": [
+                                        {"type": "text", "text": "The second page continues the exploration of quantum computing.", "styles": {}}
+                                    ]
+                                }
+                            ]
+                        }
                     ]
-                },
+                }
             },
 
-            "Create_Standard_Blog_No_Pagination": {
+            # ----- 3. Standard single-page blog (UPDATED) -----
+            "Create_Standard_Blog_Without_Multiple_Pages": {
                 "summary": "Create a single-page blog article",
-                "description": (
-                    "This example demonstrates creating a simple blog article without pagination. "
-                    "Most blog posts will follow this structure."
-                ),
+                "description": "Simple blog article without multiple pages, using new rich text models.",
                 "value": {
                     "title": "Understanding Machine Learning Basics",
                     "author": {
@@ -175,10 +296,9 @@ async def create_blog(
                         "avatarUrl": "https://cdn.example.com/avatars/john.png",
                         "affiliation": "ML Academy"
                     },
-                    "publishDate": "2025-01-10T09:00:00Z",
                     "category": {
-                        "name": "Machine Learning",
-                        "slug": "machine-learning"
+                        "name": "Juventus",
+                        "slug": "juventus"
                     },
                     "featureImage": {
                         "url": "https://cdn.example.com/images/ml-feature.jpg",
@@ -187,18 +307,97 @@ async def create_blog(
                     },
                     "currentPageBody": [
                         {
-                            "type": "text",
-                            "content": "Machine learning is a subset of artificial intelligence..."
+                            "type": "paragraph",
+                            "content": [
+                                {"type": "text", "text": "Machine learning is a subset of AI...", "styles": {}}
+                            ]
                         },
                         {
                             "type": "image",
                             "url": "https://cdn.example.com/images/ml-model.png",
                             "altText": "ML model diagram",
-                            "caption": "Diagram showing a simple ML model."
+                            "caption": "Diagram showing a simple ML model.",
+                            "previewWidth": 450,
+                            "previewHeight": 250
                         }
                     ]
                 }
-            }
+            },
+
+            # ----- 4. Minimal single-page blog (UPDATED) -----
+            "Create_Minimal_Single_Page_Blog": {
+                "summary": "Minimal single-page blog",
+                "description": "A small blog with only title, category, and one paragraph.",
+                "value": {
+                    "title": "Intro to Neural Networks",
+                    "author": {
+                        "name": "Jane Smith",
+                        "avatarUrl": "https://cdn.example.com/avatars/jane.png",
+                        "affiliation": "AI Academy"
+                    },
+                    "category": {
+                        "name": "Juventus",
+                        "slug": "juventus"
+                    },
+                    "featureImage": {
+                        "url": "https://cdn.example.com/images/nn-feature.jpg",
+                        "altText": "Neural network visual",
+                        "credit": "AI Academy"
+                    },
+                    "currentPageBody": [
+                        {
+                            "type": "paragraph",
+                            "content": [
+                                {"type": "text", "text": "Neural networks mimic the human brain for pattern recognition.", "styles": {}}
+                            ]
+                        }
+                    ]
+                }
+            },
+
+            # ----- 5. Multi-page blog with multiple pages (UPDATED) -----
+            "Create_Multi_Page_Blog_Multiple_Pages": {
+                "summary": "Multi-page blog with multiple pages",
+                "description": "Shows a blog split across three pages with mixed content types.",
+                "value": {
+                    "title": "AI and Society in 2030",
+                    "author": {
+                        "name": "Dr. Alan Turing",
+                        "avatarUrl": "https://cdn.example.com/avatars/alan.png",
+                        "affiliation": "Future AI Institute"
+                    },
+                    "category": {
+                        "name": "Juventus",
+                        "slug": "juventus"
+                    },
+                    "featureImage": {
+                        "url": "https://cdn.example.com/images/ai-society.jpg",
+                        "altText": "AI concept art",
+                        "credit": "Future AI Institute"
+                    },
+                    "pages": [
+                        {
+                            "pageNumber": 1,
+                            "pageBody": [
+                                {"type": "paragraph", "content": [{"type": "text", "text": "Page 1: Introduction to AI impact on society.", "styles": {}}]}
+                            ]
+                        },
+                        {
+                            "pageNumber": 2,
+                            "pageBody": [
+                                {"type": "paragraph", "content": [{"type": "text", "text": "Page 2: Ethical considerations of AI.", "styles": {}}]}
+                            ]
+                        },
+                        {
+                            "pageNumber": 3,
+                            "pageBody": [
+                                {"type": "paragraph", "content": [{"type": "text", "text": "Page 3: Future predictions and summary.", "styles": {}}]}
+                            ]
+                        }
+                    ]
+                }
+            },
+
         }
     )
 ):
@@ -224,15 +423,175 @@ async def create_blog(
 )
 async def update_blog(
     id: str = Path(..., description="ID of the blog to update"),
-    payload: BlogUpdate = Body(
+    payload: BlogUpdate = Body( # Using string "BlogUpdate" as placeholder
         openapi_examples={
+
+            # ----- 1. Update only the title (No Change) -----
+            "Update_Title_Only": {
+                "summary": "Update only the blog title",
+                "description": "Shows a PATCH request that updates just the title field.",
+                "value": {
+                    "title": "Updated: AI Revolution 2025",
+                }
+            },
+
+            # ----- 2. Update author only (No Change) -----
+            "Update_Author_Only": {
+                "summary": "Update only the author",
+                "description": "Updates only the author info without touching other fields.",
+                "value": {
+                    "author": {
+                        "name": "Alice Quantum",
+                        "avatarUrl": "https://cdn.example.com/avatars/alice.png",
+                        "affiliation": "Quantum Labs Research"
+                    },
+                }
+            },
+
+            # ----- 3. Update category only (No Change) -----
+            "Update_Category_Only": {
+                "summary": "Update only the category",
+                "description": "Patch request modifying only the category of the blog.",
+                "value": {
+                    "category": {
+                        "name": "Juventus",
+                        "slug": "juventus"
+                    },
+                }
+            },
+
+            # ----- 4. Update featureImage only (No Change) -----
+            "Update_FeatureImage_Only": {
+                "summary": "Update only the feature image",
+                "description": "Modifies only the feature image.",
+                "value": {
+                    "featureImage": {
+                        "url": "https://cdn.example.com/images/ai2025-new.jpg",
+                        "altText": "AI concept art updated",
+                        "credit": "Image by TechVision"
+                    },
+                }
+            },
+
+            # ----- 5. NEW: Update with Rich Content & Alignment -----
+            "Update_With_Rich_Content": {
+                "summary": "Update body with rich text and alignment",
+                "description": "Shows a PATCH request using heading, alignment, and styled text, matching the new API models.",
+                "value": {
+                    "currentPageBody": [
+                        {
+                            "type": "heading",
+                            "level": 1,
+                            "align": "center",
+                            "content": [
+                                {"type": "text", "text": "This is a Centered Heading", "styles": {}}
+                            ]
+                        },
+                        {
+                            "type": "paragraph",
+                            "align": "left",
+                            "content": [
+                                {"type": "text", "text": "This is ", "styles": {}},
+                                {"type": "text", "text": "bold text", "styles": {"bold": True}},
+                                {"type": "text", "text": " and this is ", "styles": {}},
+                                {"type": "text", "text": "italic text.", "styles": {"italic": True}}
+                            ]
+                        },
+                        {
+                            "type": "image",
+                            "align": "right",
+                            "url": "https://cdn.example.com/images/aligned-image.png",
+                            "altText": "A right-aligned image",
+                            "caption": "This image is aligned to the right.",
+                            "previewWidth": 300,
+                            "previewHeight": 300
+                        }
+                    ]
+                }
+            },
+
+            # ----- 6. Update currentPageBody only (UPDATED) -----
+            "Update_CurrentPageBody_Only": {
+                "summary": "Update the body of the current page",
+                "description": "Updates the content of a single-page blog using the new rich text models.",
+                "value": {
+                    "currentPageBody": [
+                        {
+                            "type": "paragraph",
+                            "content": [
+                                {
+                                    "type": "text",
+                                    "text": "Neural networks continue to dominate AI research...",
+                                    "styles": {}
+                                }
+                            ]
+                        },
+                        {
+                            "type": "image",
+                            "url": "https://cdn.example.com/images/neural-updated.png",
+                            "altText": "Updated neural network diagram",
+                            "caption": "Updated diagram for clarity.",
+                            "previewWidth": 500,
+                            "previewHeight": 350
+                        }
+                    ],
+                }
+            },
+
+            # ----- 7. Update pages only (multi-page blog) (UPDATED) -----
+            "Update_Pages_Only": {
+                "summary": "Update multi-page blog content",
+                "description": "Updates only the pages array of a multi-page blog, using new content models.",
+                "value": {
+                    "pages": [
+                        {
+                            "pageNumber": 1,
+                            "pageBody": [
+                                {
+                                    "type": "paragraph",
+                                    "content": [
+                                        {
+                                            "type": "text",
+                                            "text": "Artificial Intelligence evolves rapidly in 2025...",
+                                            "styles": {}
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "quote",
+                                    "content": [
+                                        {
+                                            "type": "text",
+                                            "text": "AI has become a partner rather than a tool.",
+                                            "styles": {}
+                                        }
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "pageNumber": 2,
+                            "pageBody": [
+                                {
+                                    "type": "paragraph",
+                                    "content": [
+                                        {
+                                            "type": "text",
+                                            "text": "Second page content goes here...",
+                                            "styles": {}
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    ],
+                }
+            },
+
+            # ----- 8. Full update example (UPDATED) -----
             "Full_Update_With_Pagination": {
-                "summary": "Full blog update including pagination",
-                "description": (
-                    "Comprehensive update example modifying title, author, category, "
-                    "feature image, pagination, and page body.\n\n"
-                    "⚠️ Pagination is optional but included here."
-                ),
+                "summary": "Full blog update including all fields",
+                "description": "Comprehensive example modifying all fields with new body content models.",
                 "value": {
                     "title": "AI in 2025: What’s New?",
                     "author": {
@@ -241,64 +600,56 @@ async def update_blog(
                         "affiliation": "FutureTech Journal"
                     },
                     "category": {
-                        "name": "Technology",
-                        "slug": "technology"
+                        "name": "Juventus",
+                        "slug": "juventus"
                     },
                     "featureImage": {
                         "url": "https://cdn.example.com/images/ai2025.jpg",
                         "altText": "Futuristic AI concept art",
                         "credit": "Image by TechVision"
                     },
-                    "pagination": {
-                        "currentPage": 1,
-                        "totalPages": 5,
-                        "nextPageUrl": "/blog/ai-2025?page=2",
-                        "prevPageUrl": None
-                    },
-                    "currentPageBody": [
+                    "pages": [
                         {
-                            "type": "text",
-                            "content": "Artificial Intelligence continues to evolve rapidly in 2025..."
-                        },
-                        {
-                            "type": "quote",
-                            "text": "AI has become a partner rather than a tool."
-                        },
-                        {
-                            "type": "divider"
+                            "pageNumber": 1,
+                            "pageBody": [
+                                {
+                                    "type": "paragraph",
+                                    "content": [
+                                        {
+                                            "type": "text",
+                                            "text": "Artificial Intelligence continues to evolve rapidly in 2025...",
+                                            "styles": {}
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "quote",
+                                    "content": [
+                                        {
+                                            "type": "text",
+                                            "text": "AI has become a partner rather than a tool.",
+                                            "styles": {"italic": True}
+                                        }
+                                    ]
+                                },
+                                {
+                                    "type": "divider"
+                                }
+                            ]
                         }
                     ],
-                    "last_updated": int(time.time())
                 }
             },
 
-            "Minimal_Update_No_Pagination": {
-                "summary": "Partial blog update without pagination",
-                "description": (
-                    "A minimal example updating only title, category, and body content. "
-                    "Pagination is omitted because it is optional."
-                ),
+            # ----- 9. Update blog type only (No Change) -----
+            "Update_Blog_Type_Only": {
+                "summary": "Update only the blog type",
+                "description": "Updates only the Blog_Type without touching other fields.",
                 "value": {
-                    "title": "Updated: Understanding Neural Networks",
-                    "category": {
-                        "name": "Machine Learning",
-                        "slug": "machine-learning"
-                    },
-                    "currentPageBody": [
-                        {
-                            "type": "text",
-                            "content": "Neural networks are inspired by the structure of the human brain..."
-                        },
-                        {
-                            "type": "image",
-                            "url": "https://cdn.example.com/images/neural-diagram.png",
-                            "altText": "Neural network diagram",
-                            "caption": "A simple neural network structure."
-                        }
-                    ],
-                    "last_updated": int(time.time())
+                    "blogType": "editors pick"
                 }
-            }
+            },
+
         }
     ),
 ):
@@ -306,7 +657,9 @@ async def update_blog(
     Updates an existing Blog by its ID.
     Assumes the service layer handles partial updates (e.g., ignores None fields in payload).
     """
-    updated_item = await update_blog_by_id(id=id, data=payload)
+    if payload.currentPageBody==[]:
+        raise HTTPException(status_code=status.HTTP_202_ACCEPTED, detail=f"No update made")
+    updated_item = await update_blog_by_id(blog_id=id, blog_data=payload)
     if not updated_item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Blog not found or update failed")
     

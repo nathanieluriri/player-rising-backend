@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import Depends, FastAPI, Request, HTTPException
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -19,7 +19,8 @@ from pymongo import MongoClient
 import redis
 from apscheduler.triggers.interval import IntervalTrigger
 from starlette.middleware.sessions import SessionMiddleware
-
+from security.auth import verify_admin_token
+from sub_app1.main import app as Node1
 MONGO_URI = os.getenv("MONGO_URL")
 REDIS_URI = f"redis://{os.getenv('REDIS_HOST', '127.0.0.1')}:{os.getenv('REDIS_PORT', '6379')}/0"
 REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")
@@ -78,7 +79,7 @@ app = FastAPI(
     
     lifespan= lifespan,
     title="REST API",
-    
+     
 )
 app.add_middleware(RequestTimingMiddleware)
 app.add_middleware(SessionMiddleware, secret_key="some-random-string")
@@ -94,9 +95,9 @@ storage = RedisStorage(
 limiter = FixedWindowRateLimiter(storage)
 
 RATE_LIMITS = {
-    "annonymous": parse("20/minute"),
-    "member": parse("60/minute"),
-    "admin": parse("140/minute"),
+   "annonymous": parse("220/minute"),  # <-- CHANGED FROM 20
+   "member": parse("260/minute"),  # <-- CHANGED FROM 60
+   "admin": parse("3140/minute"), # <-- CHANGED FROM 140
 }
 
 async def get_user_type(request: Request) -> tuple[str, str]:
@@ -504,13 +505,15 @@ async def health_check():
         detail=f"Health check completed with status: {overall_status}",
         data=data  
     )
-
+app.mount("/api/v1", Node1)
 # --- auto-routes-start ---
 from api.v1.admin_route import router as v1_admin_route_router
- 
-from api.v1.user_route import router as v1_user_route_router
+from api.v1.blog import router as v1_blog_router
+from api.v1.image_host import router as v1_image_host_router
+
 
 app.include_router(v1_admin_route_router, prefix='/v1')
- 
-app.include_router(v1_user_route_router, prefix='/v1')
+app.include_router(v1_blog_router, prefix='/v1')
+app.include_router(v1_image_host_router, prefix='/v1')
+
 # --- auto-routes-end ---

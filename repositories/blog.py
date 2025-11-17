@@ -36,17 +36,38 @@ async def get_blog(filter_dict: dict) -> Optional[BlogOut]:
             detail=f"An error occurred while fetching blog: {str(e)}"
         )
     
-async def get_blogs(filter_dict: dict = {},start=0,stop=100) -> List[BlogOut]:
+async def get_blogs(
+    filter_dict: Optional[dict] = None,
+    start: int = 0,
+    stop: int = 100,
+    sort_field: Optional[str] = None,
+    sort_order: Optional[int] = None  # 1 for ascending, -1 for descending
+) -> List[BlogOut]:
+    """
+    Retrieves blogs from the MongoDB collection with optional filtering,
+    pagination, and sorting.
+
+    Args:
+        filter_dict (dict, optional): MongoDB filter criteria.
+        start (int): Start index for pagination.
+        stop (int): Stop index for pagination.
+        sort_field (str, optional): Field to sort by.
+        sort_order (int, optional): 1 for ascending, -1 for descending.
+
+    Returns:
+        List[BlogOut]: List of blog objects.
+    """
     try:
         if filter_dict is None:
             filter_dict = {}
 
-        cursor = (db.blogs.find(filter_dict)
-        .skip(start)
-        .limit(stop - start)
-        )
-        blog_list = []
+        cursor = db.blogs.find(filter_dict).skip(start).limit(stop - start)
 
+        # Apply sorting if sort_field and sort_order are provided
+        if sort_field and sort_order:
+            cursor = cursor.sort(sort_field, sort_order)
+
+        blog_list = []
         async for doc in cursor:
             blog_list.append(BlogOut(**doc))
 

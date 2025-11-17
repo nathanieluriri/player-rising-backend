@@ -8,7 +8,7 @@
 
 from bson import ObjectId
 from fastapi import HTTPException
-from typing import List
+from typing import List, Optional
 
 from repositories.blog import (
     create_blog,
@@ -68,14 +68,58 @@ async def retrieve_blog_by_blog_id(id: str) -> BlogOut:
 
     return result
 
+async def retrieve_blogs(
+    filters: Optional[dict] = None,
+    start: int = 0,
+    stop: int = 100,
+    sort_field: Optional[str] = None,
+    sort_order: Optional[int] = None  # 1 for ascending, -1 for descending
+) -> List[BlogOut]:
+    """
+    Retrieves BlogOut objects from the database with optional filtering,
+    pagination, and sorting.
 
-async def retrieve_blogs(start=0,stop=100) -> List[BlogOut]:
-    """Retrieves BlogOut Objects in a list
+    Args:
+        filters (dict, optional): MongoDB filter criteria.
+        start (int): Start index for pagination.
+        stop (int): Stop index for pagination.
+        sort_field (str, optional): Field to sort by.
+        sort_order (int, optional): 1 for ascending, -1 for descending.
 
     Returns:
-        _type_: BlogOut
+        List[BlogOut]: List of blog objects.
     """
-    return await get_blogs(start=start,stop=stop)
+    
+    # Case 1: Filters + Sort
+    if filters and filters != {"field": "value"} and sort_field and sort_order:
+        return await get_blogs(
+            filter_dict=filters,
+            start=start,
+            stop=stop,
+            sort_field=sort_field,
+            sort_order=sort_order
+        )
+
+    # Case 2: Filters only
+    elif filters and filters != {"field": "value"}:
+        return await get_blogs(
+            filter_dict=filters,
+            start=start,
+            stop=stop
+        )
+
+    # Case 3: Sort only
+    elif sort_field and sort_order:
+        return await get_blogs(
+            start=start,
+            stop=stop,
+            sort_field=sort_field,
+            sort_order=sort_order
+        )
+
+    # Case 4: No filters or sort
+    else:
+        return await get_blogs(start=start, stop=stop)
 
 
 async def update_blog_by_id(blog_id: str, blog_data: BlogUpdate) -> BlogOut:

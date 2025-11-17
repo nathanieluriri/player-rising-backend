@@ -15,29 +15,38 @@ from bson import ObjectId # Assuming ObjectId is available
 import re # Added import for slug generation
 
 
-
+ 
 class BlogBase(BaseModel):
     """Base schema for a Blog article, covering main content fields."""
     title: str = Field(..., description="The main title of the article.")
     author: Author
-    publishDate: str = Field(..., description="Publication date in ISO 8601 format (e.g., 'YYYY-MM-DDTHH:MM:SSZ').")
     category: Category
+    blogType:Optional[BlogType]=BlogType.normal
     featureImage: MediaAsset
-    # Pagination is optional, as it only appears on multi-page articles
-    pagination: Optional[Pagination] = None 
+    # pages is optional, as it only appears on multi-page articles
+    pages: Optional[List[Page]] = None 
     # The body content for the current page, which is a list of mixed content types
     currentPageBody: List[BodyBlock] = Field(..., description="List of content blocks for the current page of the article.")
-
+    @model_validator(mode="after")
+    def check_mutually_exclusive_fields(self):
+        if self.pages is not None and self.currentPageBody is not None:
+            raise ValueError("You must provide EITHER 'pages' OR 'currentPageBody', not both.")
+        
+        if self.pages is None and self.currentPageBody is None:
+            raise ValueError("You must provide one of: 'pages' OR 'currentPageBody'.")
+        
+        return self
 
 class BlogCreate(BlogBase):
     """
     Schema for creating a new Blog entry. 
     Overrides slug and excerpt to be optional and auto-generated if missing.
     """
+    state:Optional[BlogStatus]=BlogStatus.draft
     # Overriding BlogBase fields to make them optional for creation
     slug: Optional[str] = Field(None, description="Optional. If None, will be auto-generated from the title.")
     excerpt: Optional[str] = Field(None, description="Optional. If None, will be auto-generated from the first text block in the body.")
-
+    
     date_created: int = Field(default_factory=lambda: int(time.time()))
     last_updated: int = Field(default_factory=lambda: int(time.time()))
 
@@ -102,8 +111,10 @@ class BlogUpdate(BaseModel):
     category: Optional[Category] = None
     featureImage: Optional[MediaAsset] = None
     excerpt: Optional[str] = None
-    pagination: Optional[Pagination] = None
+    pages: Optional[List[Page]] = None 
     currentPageBody: Optional[List[BodyBlock]] = None
+    
+    blogType:Optional[BlogType]=None
     last_updated: int = Field(default_factory=lambda: int(time.time()))
  
 
@@ -134,17 +145,24 @@ class BlogUpdate(BaseModel):
         # 2. Generate Excerpt if missing and body exists
         if not self.excerpt and self.currentPageBody:
             self.excerpt = self._generate_excerpt(self.currentPageBody)
-        elif not self.excerpt:
-            self.excerpt = "Article content is currently empty."
         
         if self.state ==BlogStatus.published:
             self.publishDate = int(time.time())
         
         return self
+    @model_validator(mode="after")
+    def check_mutually_exclusive_fields(self):
+        
+        if self.pages is not None and self.currentPageBody is not None:
+            raise ValueError("You must provide EITHER 'pages' OR 'currentPageBody', not both.")
+        
+        
+        return self
 
 class BlogOut(BlogBase):
     """Output schema for a Blog entry, including MongoDB ID and timestamps."""
-    id: Optional[str] = Field(default=None, alias="_id")
+    id: str = Field(default=None, alias="_id")
+    state:Optional[BlogStatus]=BlogStatus.draft
     date_created: Optional[int] = None
     last_updated: Optional[int] = None
     slug: Optional[str] = None
