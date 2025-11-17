@@ -168,12 +168,10 @@ class RateLimitingMiddleware(BaseHTTPMiddleware):
 
         return response
 
-# Add the middleware to the app
-# ||||||||||||||||||||||||||||||||||||
-
+ 
 app.add_middleware(RateLimitingMiddleware)
 
-# ||||||||||||||||||||||||||||||||||||
+ 
 
 # Add CORS middleware (be cautious in production)
 app.add_middleware(
@@ -338,8 +336,7 @@ async def health_check():
     # This list will track the status of all services
     service_statuses = [] 
     
-    # Note: 'overall_status' will be determined at the end,
-    # not incrementally.
+ 
 
     # --- MongoDB Check ---
     service_name = "mongo"
@@ -513,7 +510,7 @@ from api.v1.image_host import router as v1_image_host_router
 
 
 app.include_router(v1_admin_route_router, prefix='/v1')
-app.include_router(v1_blog_router, prefix='/v1')
-app.include_router(v1_image_host_router, prefix='/v1')
+app.include_router(v1_blog_router, prefix='/v1',dependencies=[Depends(verify_admin_token)])
+app.include_router(v1_image_host_router, prefix='/v1',dependencies=[Depends(verify_admin_token)])
 
 # --- auto-routes-end ---
