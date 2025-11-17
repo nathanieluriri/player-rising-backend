@@ -3,6 +3,7 @@ import time
 from fastapi import APIRouter, Body, HTTPException, Query, Path, status
 from typing import List, Optional
 import json
+from schemas.imports import CATEGORY_PAIRS, Category
 from schemas.response_schema import APIResponse
 from schemas.blog import (
     BlogCreate,
@@ -207,3 +208,23 @@ async def delete_blog(id: str = Path(..., description="ID of the blog to delete"
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Blog not found or deletion failed")
     
     return APIResponse(status_code=200, data=None, detail=f"Blog deleted successfully")
+
+
+
+# -------------------------------------------------------------------
+# List all available categories
+# (This endpoint is not for blogs, so it remains unchanged)
+# -------------------------------------------------------------------
+@router.get("/categories", response_model=APIResponse[List[Category]])
+async def list_all_categories():
+    """
+    Retrieves a list of all available blog categories and their slugs.
+    """
+    categories = [
+        Category(name=name, slug=slug) for name, slug in CATEGORY_PAIRS.items()
+    ]
+    return APIResponse(
+        status_code=200,
+        data=categories,
+        detail="Successfully retrieved all categories."
+    )
