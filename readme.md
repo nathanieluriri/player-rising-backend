@@ -1,138 +1,174 @@
-Here's a clean, professional, and informative `README.md` template tailored for your `fasterapi` scaffolding tool and FastAPI CRUD project setup.
 
----
+# Articles API Documentation
 
-### ✅ `README.md` Template
+This API provides endpoints for user operations and fetching blogs/articles. It supports filtering, pagination, and retrieving individual blog content.
 
-````markdown
-# 🚀 FasterAPI Scaffold CLI
-
-FasterAPI is a lightweight scaffolding tool that helps you quickly spin up FastAPI projects with predefined folder structures, schemas, and CRUD repository templates. It's built to save time and enforce consistency.
-
----
-
-## 📦 Features
-
-- Auto-generates a complete FastAPI project structure
-- Creates `schemas/` with `Base`, `Create`, `Update`, and `Out` models
-- Generates CRUD logic in `repository/`
-- CLI-powered — just type and scaffold
-
----
-
-## 🏗️ How the Project Was Created
-
-This project was scaffolded using the `fasterapi` CLI tool:
-
-```bash
-fasterapi make_project my_project
-cd my_project
-````
-
-To generate schema and repo files:
-
-```bash
-fasterapi make_repo user_profile
-```
-
-This will create:
+## Base URL
 
 ```
-schemas/user_profile.py
-repository/user_profile.py
-```
-
-The schema includes:
-
-* `UserProfileBase`
-* `UserProfileCreate` (with `date_created` and `last_updated`)
-* `UserProfileUpdate` (with `last_updated`)
-* `UserProfileOut` (with `_id`, timestamps)
-
----
-
-## 📁 Project Structure
-
-```bash
-my_project/
-├── api/
-│   └── v1/
-|       └──main.py 
-├── core/
-│   └── db.py
-├── repository/
-│   └── 
-├── schemas/
-│   └── 
-├── services/
-│   └── 
-├── security/
-│   └── auth.py
-|   └── encrypting.py
-|   └── hash.py
-|   └── tokens.py
-├── email_templates/
-│   └── new_sign_in.py
-├── main.py
-└── ...
+/api/v1
 ```
 
 ---
 
-## 🔧 CLI Usage
+## Table of Contents
 
+1. [Articles & Blogs](#articles--blogs)
 
+   * [List All Categories](#list-all-categories)
+   * [List Blogs By Blog Type](#list-blogs-by-blog-type)
+   * [List Blogs By Category Slug](#list-blogs-by-category-slug)
+   * [List Blogs By Category Name](#list-blogs-by-category-name)
+   * [List Blogs By Author Name](#list-blogs-by-author-name)
+   * [List Most Recent Blogs](#list-most-recent-blogs)
+   * [List All Blogs](#list-all-blogs)
+   * [Get Blog By ID](#get-blog-by-id)
 
-use it like this:
+2. [User Routes](#user-routes)
 
-```bash
-fasterapi make_project <project_name>
-fasterapi make_repo <schema_name>
+   * *(You can add your user-related endpoints here)*
+
+---
+
+## Articles & Blogs
+
+### List All Categories
+
+```
+GET /articles/content/categories
+```
+
+**Description:** Retrieves a list of all available blog categories and their slugs.
+
+**Response:**
+
+* 200: `APIResponse[List[Category]]`
+
+```json
+{
+  "status_code": 200,
+  "data": [
+    {
+      "name": "Manchester United",
+      "slug": "manchester-united"
+    }
+  ],
+  "detail": "Categories retrieved successfully."
+}
 ```
 
 ---
 
-## 💡 Example Commands
-
-```bash
-# Create a new FastAPI project
-fasterapi make_project blog_api
-
-# Generate CRUD files for schema `post`
-fasterapi make_repo post
-```
-
----
-
-
-## 🧪 Requirements
-
-* Python 3.8+
-* FastAPI
-* Pydantic
-* MongoDB (or change the backend)
-
----
-
-## ✅ To-Do
-
-* [ ] Add support for route generation
-* [ ] Add PostgreSQL support
-* [ ] Add unit tests
-
----
-
-## 🤝 Contributing
-
-Pull requests are welcome. For major changes, please open an issue first.
-
----
-
-## 📄 License
-
-MIT License
+### List Blogs By Blog Type
 
 ```
+GET /articles/content/by-blog-type/{blog_type}
+```
+
+**Parameters:**
+
+| Name      | In    | Type   | Required | Description                               |
+| --------- | ----- | ------ | -------- | ----------------------------------------- |
+| blog_type | path  | string | yes      | The type of blog to filter by             |
+| start     | query | int    | no       | Start index for pagination (default: 0)   |
+| stop      | query | int    | no       | Stop index for pagination (default: 50)   |
+| filters   | query | string | no       | JSON string of additional filter criteria |
+
+**Response:**
+
+* 200: `APIResponse[List[BlogOut]]`
+* 422: `HTTPValidationError`
 
 ---
 
+### List Blogs By Category Slug
+
+```
+GET /articles/content/by-category-slug/{slug}
+```
+
+**Parameters:**
+
+| Name    | In    | Type   | Required | Description                    |
+| ------- | ----- | ------ | -------- | ------------------------------ |
+| slug    | path  | string | yes      | Category slug to filter        |
+| start   | query | int    | no       | Start index (default: 0)       |
+| stop    | query | int    | no       | Stop index (default: 50)       |
+| filters | query | string | no       | JSON string of filter criteria |
+
+**Response:** Same as [List Blogs By Blog Type](#list-blogs-by-blog-type)
+
+---
+
+### List Blogs By Category Name
+
+```
+GET /articles/content/by-category-name/{name}
+```
+
+**Parameters:** Same as **By Category Slug**, but `name` is the category name.
+
+---
+
+### List Blogs By Author Name
+
+```
+GET /articles/content/by-author-name
+```
+
+**Parameters:**
+
+| Name        | In    | Type   | Required | Description                  |
+| ----------- | ----- | ------ | -------- | ---------------------------- |
+| author_name | query | string | yes      | Exact match of author's name |
+| start       | query | int    | no       | Start index (default: 0)     |
+| stop        | query | int    | no       | Stop index (default: 50)     |
+| filters     | query | string | no       | Optional JSON filters        |
+
+---
+
+### List Most Recent Blogs
+
+```
+GET /articles/content/recent
+```
+
+Supports optional filtering and pagination.
+
+---
+
+### List All Blogs
+
+```
+GET /articles/content/
+```
+
+Supports pagination (`start`, `stop`) and optional filtering.
+
+---
+
+### Get Blog By ID
+
+```
+GET /articles/content/{id}
+```
+
+**Parameters:**
+
+| Name | In   | Type   | Required | Description         |
+| ---- | ---- | ------ | -------- | ------------------- |
+| id   | path | string | yes      | Blog ID to retrieve |
+
+---
+  
+
+## Response Schemas
+
+* `APIResponse[BlogOut]` – Single blog
+* `APIResponse[List[BlogOut]]` – List of blogs
+* `APIResponse[List[Category]]` – List of categories
+* `HTTPValidationError` – Validation errors
+* `BlogOut` – Detailed blog output (title, author, category, slug, feature image, pages, body blocks)
+* `Category` – Blog category schema
+
+ 
