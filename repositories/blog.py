@@ -55,17 +55,27 @@ async def get_blogs(
         sort_order (int, optional): 1 for ascending, -1 for descending.
 
     Returns:
-        List[BlogOut]: List of blog objects.
+        List[BlogOut]: List of blog objects sorted by the given field.
+                       If no sort_field or sort_order is provided,
+                       results are sorted by `datecreated` descending
+                       (newest first).
     """
     try:
         if filter_dict is None:
             filter_dict = {}
 
-        cursor = db.blogs.find(filter_dict).skip(start).limit(stop - start)
+        # Base query
+        cursor = db.blogs.find(filter_dict)
 
-        # Apply sorting if sort_field and sort_order are provided
+        # Apply sorting
         if sort_field and sort_order:
             cursor = cursor.sort(sort_field, sort_order)
+        else:
+            # Default sorting: newest first
+            cursor = cursor.sort("date_created", -1)
+
+        # Apply pagination AFTER sorting
+        cursor = cursor.skip(start).limit(stop - start)
 
         blog_list = []
         async for doc in cursor:
@@ -78,6 +88,7 @@ async def get_blogs(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred while fetching blogs: {str(e)}"
         )
+
 async def update_blog(filter_dict: dict, blog_data: BlogUpdate) -> BlogOut:
     result = await db.blogs.find_one_and_update(
         filter_dict,

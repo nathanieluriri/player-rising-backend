@@ -1,7 +1,8 @@
 import os
 import httpx
 from fastapi import UploadFile, HTTPException, status
-
+import uuid
+from typing import Literal
 # --- Configuration (assumed to be accessible) ---
 FREEIMAGE_API_KEY = os.environ.get("FREEIMAGE_API_KEY")
 FREEIMAGE_API_URL = "https://freeimage.host/api/1/upload"
@@ -103,3 +104,36 @@ async def upload_to_freeimage_service(file: UploadFile) -> str:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to parse response from image host: {response.text}"
         )
+        
+        
+
+def generate_media_json(
+    file_url: str, 
+    caption: str = "", 
+    media_type: Literal["image", "video"] = "image"
+) -> dict:
+    """
+    Generates a JSON object for an uploaded media file.
+
+    :param file_url: URL where the media is accessible
+    :param caption: Optional caption for the media (camera emoji will be prepended automatically)
+    :param media_type: Must be either 'image' or 'video'
+    :return: dict representing the JSON structure
+    """
+    # Ensure the caption always includes the camera emoji
+    full_caption = f"📷 {caption}" if caption else "📷"
+
+    return {
+        "id": str(uuid.uuid4()),  # unique ID for every upload
+        "type": media_type,
+        "props": {
+            "textAlignment": "center",
+            "backgroundColor": "default",
+            "name": "",
+            "url": file_url,
+            "caption": full_caption,
+            "showPreview": True,
+            "previewWidth": 756
+        },
+        "children": []
+    }

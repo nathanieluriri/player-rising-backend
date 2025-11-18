@@ -9,6 +9,7 @@ from schemas.blog import (
     BlogCreate,
     BlogOut,
     BlogBase,
+    BlogOutLessDetail,
     BlogUpdate,
 )
 from services.blog_service import (
@@ -24,7 +25,7 @@ router = APIRouter(prefix="/blogs", tags=["Blogs"])
 # ------------------------------
 # List Most Recent Blogs (with optional filters & pagination)
 # ------------------------------
-@router.get("/recent", response_model=APIResponse[List[BlogOut]])
+@router.get("/recent", response_model=APIResponse[List[BlogOutLessDetail]])
 async def list_most_recent_blogs(
     start: Optional[int] = Query(0, description="Start index for range-based pagination"),
     stop: Optional[int] = Query(50, description="Stop index for range-based pagination"),
@@ -74,7 +75,7 @@ async def list_most_recent_blogs(
 # ------------------------------
 # List Blogs (with pagination and filtering)
 # ------------------------------
-@router.get("/", response_model=APIResponse[List[BlogOut]])
+@router.get("/", response_model=APIResponse[List[BlogOutLessDetail]])
 async def list_blogs(
     start: Optional[int] = Query(0, description="Start index for range-based pagination"),
     stop: Optional[int] = Query(100, description="Stop index for range-based pagination"),
@@ -186,6 +187,7 @@ async def update_blog(
     """
     if payload.currentPageBody==[]:
         raise HTTPException(status_code=status.HTTP_202_ACCEPTED, detail=f"No update made")
+
     updated_item = await update_blog_by_id(blog_id=id, blog_data=payload)
     if not updated_item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Blog not found or update failed")
@@ -211,20 +213,4 @@ async def delete_blog(id: str = Path(..., description="ID of the blog to delete"
 
 
 
-# -------------------------------------------------------------------
-# List all available categories
-# (This endpoint is not for blogs, so it remains unchanged)
-# -------------------------------------------------------------------
-@router.get("/categories", response_model=APIResponse[List[Category]])
-async def list_all_categories():
-    """
-    Retrieves a list of all available blog categories and their slugs.
-    """
-    categories = [
-        Category(name=name, slug=slug) for name, slug in CATEGORY_PAIRS.items()
-    ]
-    return APIResponse(
-        status_code=200,
-        data=categories,
-        detail="Successfully retrieved all categories."
-    )
+ 

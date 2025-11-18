@@ -1,5 +1,6 @@
+from bson import ObjectId
 from fastapi import Depends, FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
@@ -21,6 +22,9 @@ from apscheduler.triggers.interval import IntervalTrigger
 from starlette.middleware.sessions import SessionMiddleware
 from security.auth import verify_admin_token
 from sub_app1.main import app as Node1
+from motor.motor_asyncio import AsyncIOMotorGridFSBucket
+from core.database import db
+fs = AsyncIOMotorGridFSBucket(db)
 MONGO_URI = os.getenv("MONGO_URL")
 REDIS_URI = f"redis://{os.getenv('REDIS_HOST', '127.0.0.1')}:{os.getenv('REDIS_PORT', '6379')}/0"
 REDIS_HOST = os.getenv("REDIS_HOST", "127.0.0.1")
@@ -502,6 +506,25 @@ async def health_check():
         detail=f"Health check completed with status: {overall_status}",
         data=data  
     )
+    
+    
+# ------------------------------
+# Public route to serve videos
+# ------------------------------
+
+@app.get("/videos/{video_id}")
+async def get_video(video_id: str):
+    try:
+        # NOT awaited
+        download_stream = await fs.open_download_stream(ObjectId(video_id))
+
+        return StreamingResponse(
+            download_stream,
+            media_type=download_stream.metadata.get("content_type", "video/mp4")
+        )
+    except Exception:
+        raise HTTPException(status_code=404, detail="Video not found")
+    
 app.mount("/api/v1", Node1)
 # --- auto-routes-start ---
 from api.v1.admin_route import router as v1_admin_route_router
@@ -511,6 +534,6 @@ from api.v1.image_host import router as v1_image_host_router
 
 app.include_router(v1_admin_route_router, prefix='/v1')
 app.include_router(v1_blog_router, prefix='/v1',dependencies=[Depends(verify_admin_token)])
-app.include_router(v1_image_host_router, prefix='/v1',dependencies=[Depends(verify_admin_token)])
+app.include_router(v1_image_host_router, prefix='/v1')
 
 # --- auto-routes-end ---

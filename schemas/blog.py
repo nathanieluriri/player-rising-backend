@@ -220,6 +220,40 @@ class BlogUpdate(BaseModel):
         return self
 
 
+
+
+class BlogOutLessDetail(BaseModel):
+    """Output schema for a Blog entry, including MongoDB ID and timestamps."""
+    id: str = Field(default=None, alias="_id")
+    title: str = Field(..., description="The main title of the article.")
+    author: Author
+    category: Category
+    blogType: Optional[BlogType] = BlogType.normal
+    featureImage: Optional[MediaAsset] = None
+    state: Optional[BlogStatus] = BlogStatus.draft
+    date_created: Optional[int] = None
+    last_updated: Optional[int] = None
+    slug: Optional[str] = None
+    parsed: Optional[Any] = None
+    excerpt: Optional[str] = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def convert_objectid(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        # coerce ObjectId to str for _id if needed
+        if "_id" in values and isinstance(values["_id"], ObjectId):
+            values["_id"] = str(values["_id"])
+        return values
+
+    class Config:
+        populate_by_name = True  # allows using `id` when constructing the model
+        arbitrary_types_allowed = True
+        json_encoders = {
+            ObjectId: str
+        }
+
+
+
 class BlogOut(BlogBase):
     """Output schema for a Blog entry, including MongoDB ID and timestamps."""
     id: str = Field(default=None, alias="_id")

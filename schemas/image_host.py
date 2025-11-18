@@ -7,3 +7,10 @@ class ImageUploadResponse(BaseModel):
     The "data" part of the response, containing the uploaded image URL.
     """
     url: str
+
+
+class VideoUploadResponse(BaseModel):
+    """
+    The "data" part of the response, containing the uploaded Video URL.
+    """
+    url: str
