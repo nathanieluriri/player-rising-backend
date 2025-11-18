@@ -180,7 +180,7 @@ class BlogCreate(BlogBase):
 
 class BlogUpdate(BaseModel):
     """Schema for updating an existing Blog entry (partial update via PATCH)."""
-    state: Optional[BlogStatus] = BlogStatus.draft
+    state: Optional[BlogStatus] = None
     title: Optional[str] = None
     author: Optional[Author] = None
     publishDate: Optional[int] = None
