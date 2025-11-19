@@ -12,7 +12,7 @@ from pymongo import ReturnDocument
 from core.database import db
 from fastapi import HTTPException,status
 from typing import List,Optional
-from schemas.blog import BlogUpdate, BlogCreate, BlogOut
+from schemas.blog import BlogOutLessDetail, BlogUpdate, BlogCreate, BlogOut
 
 async def create_blog(blog_data: BlogCreate) -> BlogOut:
     blog_dict = blog_data.model_dump()
@@ -42,7 +42,7 @@ async def get_blogs(
     stop: int = 100,
     sort_field: Optional[str] = None,
     sort_order: Optional[int] = None  # 1 for ascending, -1 for descending
-) -> List[BlogOut]:
+) -> List[BlogOutLessDetail]:
     """
     Retrieves blogs from the MongoDB collection with optional filtering,
     pagination, and sorting.
@@ -66,7 +66,7 @@ async def get_blogs(
 
         # Base query
         cursor = db.blogs.find(filter_dict)
-
+        total_blogs = await db.blogs.count_documents(filter_dict)
         # Apply sorting
         if sort_field and sort_order:
             cursor = cursor.sort(sort_field, sort_order)
@@ -79,7 +79,9 @@ async def get_blogs(
 
         blog_list = []
         async for doc in cursor:
-            blog_list.append(BlogOut(**doc))
+            blog_doc = BlogOutLessDetail(**doc)
+            blog_doc.totalItems= total_blogs
+            blog_list.append(blog_doc)
 
         return blog_list
 

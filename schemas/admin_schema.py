@@ -56,10 +56,9 @@ class AdminOut(AdminBase):
             return values
       
             
-    class Config:
-        from_attributes = True
-        populate_by_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {
-            ObjectId: str
-        }
+    model_config = {
+        "from_attributes": True,        # allows creating model from objects (like ORM)
+        "populate_by_name": True,       # allow snake_case input
+        "arbitrary_types_allowed": True,# allow non-pydantic types like ObjectId
+        "json_encoders": {ObjectId: str} # encode ObjectId as string
+    }

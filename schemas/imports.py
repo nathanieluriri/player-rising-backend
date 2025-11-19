@@ -251,10 +251,11 @@ class BaseBlock(BaseModel):
     children: Optional[List["BaseBlock"]] = None  # recursive
     align: Optional[Literal["left", "center", "right"]] = None
 
-    class Config:
-        extra = "allow"
-        underscore_attrs_are_private = True
 
+    model_config = {
+        "extra": "allow",  # allow extra fields
+        "populate_by_name": True,  # if you need snake_case -> camelCase
+    }
     # Recursively ensure children parse into BaseBlock
     @validator("children", pre=True, each_item=False)
     def parse_children(cls, v):

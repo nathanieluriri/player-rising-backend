@@ -1,7 +1,7 @@
 # updated_blog_schema.py
 from __future__ import annotations
 from typing import List, Optional, Dict, Any, Union
-from pydantic import Field, BaseModel, model_validator, root_validator
+from pydantic import AliasChoices, Field, BaseModel, model_validator, root_validator
 import time
 import re
 from bson import ObjectId
@@ -39,15 +39,8 @@ class BlogBase(BaseModel):
         if self.pages is not None and self.currentPageBody is not None:
             raise ValueError("You must provide EITHER 'pages' OR 'currentPageBody', not both.")
         if self.pages is None and self.currentPageBody is None:
-            
             raise ValueError("You must provide one of: 'pages' OR 'currentPageBody'.")
-
-        # If currentPageBody provided, parse it into typed models
-       
-
-        # If pages provided, parse each Page.pageBody into parsed list of lists
-         
-
+ 
         return self
 
 
@@ -73,95 +66,39 @@ class BlogCreate(BlogBase):
         # Remove leading/trailing hyphens
         title = title.strip('-')
         return title if title else "untitled-blog"
-
+ 
     @staticmethod
-    def _extract_text_from_inline(inline: Union[Dict[str, Any], BaseBlock, Any]) -> str:
+    def _generate_excerpt(current_page_body: List[Dict], max_length: int = 200) -> str:
         """
-        Given an inline element (dict or model) try to extract text.
-        Handles shapes:
-          - {"type":"text","text":"..."}
-          - StyledText Pydantic models
-          - LinkInline content lists
-        """
-        if inline is None:
-            return ""
-        # If it's a dict
-        if isinstance(inline, dict):
-            t = inline.get("type")
-            if t == "text":
-                return (inline.get("text") or "").strip()
-            if t == "link":
-                # link.content is typically a list of inline texts
-                s = ""
-                for it in inline.get("content", []):
-                    s += BlogCreate._extract_text_from_inline(it)
-                return s.strip()
-            # unknown inline shape -> attempt to stringify
-            return str(inline.get("text") or "")
-        # If it's a Pydantic model (BaseModel)
-        try:
-            # many of our inline models implement .text or .content
-            if hasattr(inline, "text"):
-                return (getattr(inline, "text") or "").strip()
-            if hasattr(inline, "content"):
-                # content might be a list of StyledText
-                s = ""
-                for it in getattr(inline, "content") or []:
-                    s += BlogCreate._extract_text_from_inline(it)
-                return s.strip()
-        except Exception:
-            pass
-        # Fallback
-        return str(inline)
+        Generate a text excerpt from a page body structure.
 
-    @staticmethod
-    def _generate_excerpt_from_parsed(parsed_blocks: List[BaseBlock]) -> str:
-        """
-        Walk parsed_blocks (list of BaseBlock models) and return first reasonable text:
-         - prefer paragraph blocks, then headings, then text nested within other blocks.
-        """
-        MAX_EXCERPT_LENGTH = 150
-        if not parsed_blocks:
-            return "No introductory text available for excerpt generation."
-        # parsed_blocks might be a list-of-pages (if pages provided), so flatten if needed
-        flat_blocks: List[BaseBlock] = []
-        # If first element is a list (multi-page), flatten by pages' first page only for excerpt
-        if parsed_blocks and isinstance(parsed_blocks[0], list):
-            # take first page's blocks
-            flat_blocks = parsed_blocks[0]
-        else:
-            flat_blocks = parsed_blocks
+        Args:
+            current_page_body (List[Dict]): List of blocks as in your example.
+            max_length (int): Maximum length of the excerpt.
 
-        for block in flat_blocks:
-            try:
-                btype = getattr(block, "type", None)
-                if btype in ("paragraph", "heading"):
-                    content = getattr(block, "content", None)
-                    # content can be string or list of inline content
-                    if isinstance(content, str):
-                        text = content.strip()
-                    elif isinstance(content, list):
-                        # content is list of inline items: join their text
-                        text = "".join(BlogCreate._extract_text_from_inline(it) for it in content).strip()
-                    else:
-                        # unknown content shape -> skip
-                        text = ""
-                    if text:
-                        return (text[:MAX_EXCERPT_LENGTH].rstrip() + "...") if len(text) > MAX_EXCERPT_LENGTH else text
-                # If block contains nested children, try them recursively
-                if getattr(block, "children", None):
-                    # children are parsed BaseBlock instances
-                    for child in block.children:
-                        # recursive attempt
-                        candidate = BlogCreate._generate_excerpt_from_parsed([child])
-                        if candidate and candidate != "No introductory text available for excerpt generation.":
-                            return candidate
-            except Exception:
-                continue
-        return "No introductory text available for excerpt generation."
+        Returns:
+            str: Combined text excerpt truncated to max_length.
+        """
+        texts = []
+
+        for block in current_page_body:
+            # Extract text from block content
+            content_list = block.get("content", [])
+            for content in content_list:
+                if content.get("type") == "text":
+                    texts.append(content.get("text", ""))
+
+        # Join all text segments
+        full_text = " ".join(texts).strip()
+
+        # Truncate if necessary
+        if len(full_text) > max_length:
+            return full_text[:max_length].rstrip() + "..."
+        return full_text
+    
 
     @model_validator(mode="after")
-    def set_defaults(self) -> "BlogCreate":
+    def set_defaults(self) -> BlogCreate:
         """Auto-generate slug and excerpt if they were not provided."""
         # 1. Generate Slug if missing
         if not self.slug and self.title:
@@ -191,13 +128,49 @@ class BlogUpdate(BaseModel):
     currentPageBody: Optional[List[Dict[str, Any]]] = None
     blogType: Optional[BlogType] = None
     last_updated: int = Field(default_factory=lambda: int(time.time()))
-    # parsed will be set if currentPageBody present
-    parsed: Optional[List[BaseBlock]] = None
-
+ 
+    
     @staticmethod
-    def _generate_excerpt_from_parsed(parsed_blocks: List[BaseBlock]) -> str:
-        # reuse logic from BlogCreate (mirror)
-        return BlogCreate._generate_excerpt_from_parsed(parsed_blocks)
+    def _generate_slug(title: str) -> str:
+        """Helper to slugify a title."""
+        title = title.lower()
+        # Replace non-alphanumeric (except spaces and hyphens) with nothing
+        title = re.sub(r'[^a-z0-9\s-]', '', title)
+        # Replace one or more spaces/hyphens with a single hyphen
+        title = re.sub(r'[\s-]+', '-', title)
+        # Remove leading/trailing hyphens
+        title = title.strip('-')
+        return title if title else "untitled-blog"
+    
+    @staticmethod
+    def _generate_excerpt(current_page_body: List[Dict], max_length: int = 200) -> str:
+        """
+        Generate a text excerpt from a page body structure.
+
+        Args:
+            current_page_body (List[Dict]): List of blocks as in your example.
+            max_length (int): Maximum length of the excerpt.
+
+        Returns:
+            str: Combined text excerpt truncated to max_length.
+        """
+        texts = []
+
+        for block in current_page_body:
+            # Extract text from block content
+            content_list = block.get("content", [])
+            for content in content_list:
+                if content.get("type") == "text":
+                    texts.append(content.get("text", ""))
+
+        # Join all text segments
+        full_text = " ".join(texts).strip()
+
+        # Truncate if necessary
+        if len(full_text) > max_length:
+            return full_text[:max_length].rstrip() + "..."
+        return full_text
+    
 
     @model_validator(mode="after")
     def set_defaults(self) -> "BlogUpdate":
@@ -231,12 +204,62 @@ class BlogOutLessDetail(BaseModel):
     blogType: Optional[BlogType] = BlogType.normal
     featureImage: Optional[MediaAsset] = None
     state: Optional[BlogStatus] = BlogStatus.draft
-    date_created: Optional[int] = None
-    last_updated: Optional[int] = None
+    currentPageBody: Optional[List[Dict[str, Any]]] = None
+    date_created: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("date_created", "dateCreated"),
+        serialization_alias="dateCreated",
+    )
+    last_updated: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("last_updated", "lastUpdated"),
+        serialization_alias="lastUpdated",
+    )
     slug: Optional[str] = None
-    parsed: Optional[Any] = None
     excerpt: Optional[str] = None
+    totalItems:Optional[int]=None
 
+    @staticmethod
+    def _generate_excerpt(current_page_body: List[Dict], max_length: int = 200) -> str:
+        """
+        Generate a text excerpt from a page body structure.
+
+        Args:
+            current_page_body (List[Dict]): List of blocks as in your example.
+            max_length (int): Maximum length of the excerpt.
+
+        Returns:
+            str: Combined text excerpt truncated to max_length.
+        """
+        texts = []
+
+        for block in current_page_body:
+            # Extract text from block content
+            content_list = block.get("content", [])
+            for content in content_list:
+                if content.get("type") == "text":
+                    texts.append(content.get("text", ""))
+
+        # Join all text segments
+        full_text = " ".join(texts).strip()
+
+        # Truncate if necessary
+        if len(full_text) > max_length:
+            return full_text[:max_length].rstrip() + "..."
+        return full_text
+    
+    @staticmethod
+    def _generate_slug(title: str) -> str:
+        """Helper to slugify a title."""
+        title = title.lower()
+        # Replace non-alphanumeric (except spaces and hyphens) with nothing
+        title = re.sub(r'[^a-z0-9\s-]', '', title)
+        # Replace one or more spaces/hyphens with a single hyphen
+        title = re.sub(r'[\s-]+', '-', title)
+        # Remove leading/trailing hyphens
+        title = title.strip('-')
+        return title if title else "untitled-blog"
+    
     @model_validator(mode="before")
     @classmethod
     def convert_objectid(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -244,26 +267,91 @@ class BlogOutLessDetail(BaseModel):
         if "_id" in values and isinstance(values["_id"], ObjectId):
             values["_id"] = str(values["_id"])
         return values
+    
+    @model_validator(mode="after")
+    def set_defaults(self) -> BlogCreate:
+        """Auto-generate slug and excerpt if they were not provided."""
+        # 1. Generate Slug if missing
+        if not self.slug and self.title:
+            self.slug = self._generate_slug(self.title)
+        elif not self.slug:
+            self.slug = "invalid-slug"
 
-    class Config:
-        populate_by_name = True  # allows using `id` when constructing the model
-        arbitrary_types_allowed = True
-        json_encoders = {
-            ObjectId: str
-        }
+        # # 2. Generate Excerpt if missing and parsed exists
+        if not self.excerpt and self.parsed or self.excerpt=="Article content is currently empty.":
+            self.excerpt = self._generate_excerpt(self.currentPageBody)
+        elif not self.excerpt:
+            self.excerpt = "Article content is currently empty."
 
+        return self
+
+    model_config = {
+        "populate_by_name": True,        # accept snake_case input
+        "ser_json_typed": False,         # your setting
+        "json_encoders": {
+            ObjectId: str,               # keep your ObjectId encoder
+        },
+    }
 
 
 class BlogOut(BlogBase):
     """Output schema for a Blog entry, including MongoDB ID and timestamps."""
     id: str = Field(default=None, alias="_id")
     state: Optional[BlogStatus] = BlogStatus.draft
-    date_created: Optional[int] = None
-    last_updated: Optional[int] = None
+    date_created: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("date_created", "dateCreated"),
+        serialization_alias="dateCreated",
+    )
+    last_updated: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("last_updated", "lastUpdated"),
+        serialization_alias="lastUpdated",
+    )
     slug: Optional[str] = None
     parsed: Optional[Any] = None
     excerpt: Optional[str] = None
 
+    @staticmethod
+    def _generate_excerpt(current_page_body: List[Dict], max_length: int = 200) -> str:
+        """
+        Generate a text excerpt from a page body structure.
+
+        Args:
+            current_page_body (List[Dict]): List of blocks as in your example.
+            max_length (int): Maximum length of the excerpt.
+
+        Returns:
+            str: Combined text excerpt truncated to max_length.
+        """
+        texts = []
+
+        for block in current_page_body:
+            # Extract text from block content
+            content_list = block.get("content", [])
+            for content in content_list:
+                if content.get("type") == "text":
+                    texts.append(content.get("text", ""))
+
+        # Join all text segments
+        full_text = " ".join(texts).strip()
+
+        # Truncate if necessary
+        if len(full_text) > max_length:
+            return full_text[:max_length].rstrip() + "..."
+        return full_text
+    
+    @staticmethod
+    def _generate_slug(title: str) -> str:
+        """Helper to slugify a title."""
+        title = title.lower()
+        # Replace non-alphanumeric (except spaces and hyphens) with nothing
+        title = re.sub(r'[^a-z0-9\s-]', '', title)
+        # Replace one or more spaces/hyphens with a single hyphen
+        title = re.sub(r'[\s-]+', '-', title)
+        # Remove leading/trailing hyphens
+        title = title.strip('-')
+        return title if title else "untitled-blog"
     @model_validator(mode="before")
     @classmethod
     def convert_objectid(cls, values: Dict[str, Any]) -> Dict[str, Any]:
@@ -271,10 +359,28 @@ class BlogOut(BlogBase):
         if "_id" in values and isinstance(values["_id"], ObjectId):
             values["_id"] = str(values["_id"])
         return values
+    @model_validator(mode="after")
+    def set_defaults(self) -> BlogCreate:
+        """Auto-generate slug and excerpt if they were not provided."""
+        # 1. Generate Slug if missing
+        if not self.slug and self.title or self.slug=="invalid-slug":
+            self.slug = self._generate_slug(self.title)
+        elif not self.slug:
+            self.slug = "invalid-slug"
 
-    class Config:
-        populate_by_name = True  # allows using `id` when constructing the model
-        arbitrary_types_allowed = True
-        json_encoders = {
-            ObjectId: str
-        }
+        # # 2. Generate Excerpt if missing and parsed exists
+        if not self.excerpt and self.parsed or self.excerpt=="Article content is currently empty.":
+            self.excerpt = self._generate_excerpt(self.currentPageBody)
+        elif not self.excerpt:
+            self.excerpt = "Article content is currently empty."
+
+        return self
+
+
+    model_config = {
+        "populate_by_name": True,        # accept snake_case input
+        "ser_json_typed": False,         # your setting
+        "json_encoders": {
+            ObjectId: str,               # keep your ObjectId encoder
+        },
+    }
