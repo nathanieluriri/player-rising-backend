@@ -26,8 +26,7 @@ class BlogBase(BaseModel):
     currentPageBody: Optional[List[Dict[str, Any]]] = Field(
         None, description="List of BlockNote-style content blocks for the current page."
     )
-    # parsed = the parsed/typed tree produced with parse_document(); set at validation time
-    parsed: Optional[List[BaseBlock]] = None
+ 
 
     @model_validator(mode="after")
     def check_mutually_exclusive_fields(self) -> "BlogBase":
@@ -107,8 +106,8 @@ class BlogCreate(BlogBase):
             self.slug = "invalid-slug"
 
         # 2. Generate Excerpt if missing and parsed exists
-        if not self.excerpt and self.parsed:
-            self.excerpt = self._generate_excerpt_from_parsed(self.parsed)
+        if not self.excerpt or self.excerpt=="Article content is currently empty.":
+            self.excerpt = self._generate_excerpt(self.currentPageBody)
         elif not self.excerpt:
             self.excerpt = "Article content is currently empty."
 
@@ -178,8 +177,8 @@ class BlogUpdate(BaseModel):
         # If currentPageBody present, parse it now
         
 
-        if not self.excerpt and self.parsed:
-            self.excerpt = self._generate_excerpt_from_parsed(self.parsed)
+        if not self.excerpt :
+            self.excerpt = self._generate_excerpt(self.currentPageBody)
 
         if self.state == BlogStatus.published and not self.publishDate:
             self.publishDate = int(time.time())
@@ -278,7 +277,7 @@ class BlogOutLessDetail(BaseModel):
             self.slug = "invalid-slug"
 
         # # 2. Generate Excerpt if missing and parsed exists
-        if not self.excerpt and self.parsed or self.excerpt=="Article content is currently empty.":
+        if not self.excerpt or self.excerpt=="Article content is currently empty.":
             self.excerpt = self._generate_excerpt(self.currentPageBody)
         elif not self.excerpt:
             self.excerpt = "Article content is currently empty."
@@ -309,7 +308,7 @@ class BlogOut(BlogBase):
         serialization_alias="lastUpdated",
     )
     slug: Optional[str] = None
-    parsed: Optional[Any] = None
+ 
     excerpt: Optional[str] = None
 
     @staticmethod
@@ -369,7 +368,7 @@ class BlogOut(BlogBase):
             self.slug = "invalid-slug"
 
         # # 2. Generate Excerpt if missing and parsed exists
-        if not self.excerpt and self.parsed or self.excerpt=="Article content is currently empty.":
+        if not self.excerpt  or self.excerpt=="Article content is currently empty.":
             self.excerpt = self._generate_excerpt(self.currentPageBody)
         elif not self.excerpt:
             self.excerpt = "Article content is currently empty."
