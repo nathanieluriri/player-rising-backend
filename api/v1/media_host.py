@@ -422,7 +422,7 @@ async def delete_media_by_id(
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Media item not found")
             
-    return APIResponse(status_code=200, data=item, detail="Media item fetched")
+    return APIResponse(status_code=200, data=f"acknowledged: {item.acknowledged} delete count: {item.deleted_count}", detail="Media item fetched")
 
 
 
