@@ -203,7 +203,7 @@ class BlogOutLessDetail(BaseModel):
     blogType: Optional[BlogType] = BlogType.normal
     featureImage: Optional[MediaAsset] = None
     state: Optional[BlogStatus] = BlogStatus.draft
-    currentPageBody: Optional[List[Dict[str, Any]]] = None
+ 
     date_created: Optional[int] = Field(
         default=None,
         validation_alias=AliasChoices("date_created", "dateCreated"),
@@ -262,27 +262,31 @@ class BlogOutLessDetail(BaseModel):
     @model_validator(mode="before")
     @classmethod
     def convert_objectid(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        # coerce ObjectId to str for _id if needed
+        # 1. coerce ObjectId to str for _id if needed
         if "_id" in values and isinstance(values["_id"], ObjectId):
             values["_id"] = str(values["_id"])
         return values
     
+    @model_validator(mode="before")
+    @classmethod
+    def set_excerpt(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        # # 2. Generate Excerpt if missing and parsed exists
+        if not values.get("excerpt",None) or values.get("excerpt",None)=="Article content is currently empty.":
+            values["excerpt"] = cls._generate_excerpt(values.get("currentPageBody",[]))
+        elif not values.get("excerpt",None):
+            values["excerpt"] = "Article content is currently empty."
+
+        return values
     @model_validator(mode="after")
-    def set_defaults(self) -> BlogCreate:
+    def set_defaults(self) -> "BlogOutLessDetail":
         """Auto-generate slug and excerpt if they were not provided."""
-        # 1. Generate Slug if missing
+        # 3. Generate Slug if missing
         if not self.slug and self.title:
             self.slug = self._generate_slug(self.title)
         elif not self.slug:
             self.slug = "invalid-slug"
+            
 
-        # # 2. Generate Excerpt if missing and parsed exists
-        if not self.excerpt or self.excerpt=="Article content is currently empty.":
-            self.excerpt = self._generate_excerpt(self.currentPageBody)
-        elif not self.excerpt:
-            self.excerpt = "Article content is currently empty."
-
-        return self
 
     model_config = {
         "populate_by_name": True,        # accept snake_case input
@@ -359,7 +363,7 @@ class BlogOut(BlogBase):
             values["_id"] = str(values["_id"])
         return values
     @model_validator(mode="after")
-    def set_defaults(self) -> BlogCreate:
+    def set_defaults(self) :
         """Auto-generate slug and excerpt if they were not provided."""
         # 1. Generate Slug if missing
         if not self.slug and self.title or self.slug=="invalid-slug":
