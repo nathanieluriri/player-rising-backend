@@ -30,7 +30,7 @@ async def create_media_task(media_dict: dict,file_bytes: bytes, filename: str, c
         image_url = await upload_to_freeimage_service_from_bytes(file_bytes, filename, content_type)
         media_data = MediaCreate(**media_dict,url=image_url,name=filename)
     elif media.mediaType=="video":
-        video_url = await save_video_to_mongodb_from_bytes((file_bytes, filename, content_type))
+        video_url = await save_video_to_mongodb_from_bytes(file_bytes, filename, content_type)
         full_url = media.requestUrl + video_url
         media_data = MediaCreate(**media_dict,url=full_url,name=filename)
     
