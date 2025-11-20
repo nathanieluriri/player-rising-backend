@@ -334,6 +334,24 @@ async def health_check():
     )
 
 
+@app.get("/task/{task_id}",tags=["Tasks"])
+def get_task_status(task_id: str):
+    result = celery_app.AsyncResult(task_id)
+
+    response = {
+        "task_id": task_id,
+        "state": result.state,    # PENDING, STARTED, SUCCESS, FAILURE
+        "ready": result.ready(),
+    }
+
+    if result.successful():
+        response["result"] = result.get()
+
+    elif result.failed():
+        response["error"] = str(result.result)
+
+    return response
+
 @app.get("/health-detailed",tags=["Health"], summary="Performs a detailed health check of all integrated services")
 async def health_check():
     services = {}
