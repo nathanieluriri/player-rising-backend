@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Query, Path, status
 from repositories.media_host import get_media,get_media_files, MediaOut
 from schemas.response_schema import APIResponse
 # Define Router
-router = APIRouter(prefix="/media", tags=["Media"])
+router = APIRouter()
 
 # -------------------------------------------------------------------
 # Get Media by Type (e.g., 'video', 'image')

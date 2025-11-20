@@ -31,7 +31,8 @@ class MediaCreate(MediaBase):
     url:str
     name:str
 class MediaOut(MediaCreate):
-    
+    totalItems:Optional[int]=None
+    itemIndex:Optional[int]=None
     id: Optional[str] = Field(
         default=None,
         validation_alias=AliasChoices("_id", "id"),
