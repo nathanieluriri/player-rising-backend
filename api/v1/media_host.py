@@ -2,7 +2,7 @@ from bson import ObjectId
 from fastapi.responses import StreamingResponse
 from celery_worker import celery_app
 from typing import TypeVar, Generic, Union
-from repositories.media_host import save_video_to_mongodb
+from repositories.media_host import delete_media, save_video_to_mongodb
 from schemas.imports import CategoryNameEnum
 from schemas.response_schema import APIResponse
 from schemas.media_host import ImageUploadResponse, MediaBase, VideoUploadResponse
@@ -417,7 +417,7 @@ async def delete_media_by_id(
     except:
          query = {"_id": id}
 
-    item = await delete_media_by_id(id=id)
+    item = await delete_media(filter_dict=query)
     
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Media item not found")
