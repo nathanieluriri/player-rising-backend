@@ -152,22 +152,22 @@ class BlogUpdate(BaseModel):
             str: Combined text excerpt truncated to max_length.
         """
         texts = []
+        if current_page_body  is not None:
+            for block in current_page_body:
+                # Extract text from block content
+                content_list = block.get("content", [])
+                for content in content_list:
+                    if content.get("type") == "text":
+                        texts.append(content.get("text", ""))
 
-        for block in current_page_body:
-            # Extract text from block content
-            content_list = block.get("content", [])
-            for content in content_list:
-                if content.get("type") == "text":
-                    texts.append(content.get("text", ""))
+            # Join all text segments
+            full_text = " ".join(texts).strip()
 
-        # Join all text segments
-        full_text = " ".join(texts).strip()
-
-        # Truncate if necessary
-        if len(full_text) > max_length:
-            return full_text[:max_length].rstrip() + "..."
-        return full_text
-    
+            # Truncate if necessary
+            if len(full_text) > max_length:
+                return full_text[:max_length].rstrip() + "..."
+            return full_text
+        
 
     @model_validator(mode="after")
     def set_defaults(self) -> "BlogUpdate":
