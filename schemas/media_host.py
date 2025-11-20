@@ -24,8 +24,8 @@ class MediaBase(BaseModel):
     category: CategoryNameEnum
     requestUrl:Optional[str]=None
     
-class MediaUpdate(MediaBase):
-    pass
+class MediaUpdate(BaseModel):
+    category: CategoryNameEnum
     
 class MediaCreate(MediaBase):
     url:str
