@@ -394,7 +394,7 @@ async def get_media_by_id(
 # -------------------------------------------------------------------
 # Retrieve a single Media Item
 # -------------------------------------------------------------------
-@router.delete("/{id}", response_model=APIResponse[MediaOut])
+@router.delete("/{id}")
 async def delete_media_by_id(
     id: str = Path(..., description="Media ID (UUID or ObjectId string)")
 ):
