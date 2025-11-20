@@ -529,7 +529,7 @@ app.mount("/api/v1", Node1)
 # --- auto-routes-start ---
 from api.v1.admin_route import router as v1_admin_route_router
 from api.v1.blog import router as v1_blog_router
-from api.v1.image_host import router as v1_image_host_router
+from api.v1.media_host import router as v1_image_host_router
 
 
 app.include_router(v1_admin_route_router, prefix='/v1')

@@ -78,10 +78,13 @@ async def get_blogs(
         cursor = cursor.skip(start).limit(stop - start)
 
         blog_list = []
+        itemIndex=1
         async for doc in cursor:
             blog_doc = BlogOutLessDetail(**doc)
             blog_doc.totalItems= total_blogs
+            blog_doc.itemIndex=itemIndex
             blog_list.append(blog_doc)
+            itemIndex += 1
 
         return blog_list
 

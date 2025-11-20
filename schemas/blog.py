@@ -5,8 +5,6 @@ from pydantic import AliasChoices, Field, BaseModel, model_validator, root_valid
 import time
 import re
 from bson import ObjectId
-
-# ---- Assumed existing imports in your project (Author, Category, Page, MediaAsset, BlogStatus, BlogType, etc.)
 from schemas.imports import *
 
 # ====================================================================
@@ -217,6 +215,7 @@ class BlogOutLessDetail(BaseModel):
     slug: Optional[str] = None
     excerpt: Optional[str] = None
     totalItems:Optional[int]=None
+    itemIndex:Optional[int]=None
 
     @staticmethod
     def _generate_excerpt(current_page_body: List[Dict], max_length: int = 200) -> str:
@@ -277,6 +276,7 @@ class BlogOutLessDetail(BaseModel):
             values["excerpt"] = "Article content is currently empty."
 
         return values
+    
     @model_validator(mode="after")
     def set_defaults(self) -> "BlogOutLessDetail":
         """Auto-generate slug and excerpt if they were not provided."""
@@ -285,7 +285,7 @@ class BlogOutLessDetail(BaseModel):
             self.slug = self._generate_slug(self.title)
         elif not self.slug:
             self.slug = "invalid-slug"
-            
+        return self
 
 
     model_config = {

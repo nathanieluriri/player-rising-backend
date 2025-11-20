@@ -1,11 +1,11 @@
-import os
 from bson import ObjectId
 from fastapi.responses import StreamingResponse
-import httpx
-from typing import TypeVar, Generic
+from celery_worker import celery_app
+from typing import TypeVar, Generic, Union
 from repositories.media_host import save_video_to_mongodb
+from schemas.imports import CategoryNameEnum
 from schemas.response_schema import APIResponse
-from schemas.image_host import ImageUploadResponse, VideoUploadResponse
+from schemas.media_host import ImageUploadResponse, MediaBase, VideoUploadResponse
 from security.auth import verify_admin_token
 from services.image_host import generate_media_json, upload_to_freeimage_service
 from fastapi import (
@@ -33,6 +33,191 @@ router = APIRouter(
     prefix="/media",
     tags=["Media"]
 )
+@router.post(
+    "/upload-media",
+    
+    dependencies=[Depends(verify_admin_token)],
+    response_model=Union[APIResponse[VideoUploadResponse],APIResponse[ImageUploadResponse]],
+    status_code=status.HTTP_201_CREATED,
+    summary="Upload an image or video",
+    description=(
+        "This endpoint uploads either an image or a video. "
+        "Images are uploaded to FreeImage.Host, while videos are stored "
+        "in MongoDB GridFS. The endpoint automatically detects media type "
+        "based on file MIME type."
+    )
+)
+async def upload_media(
+    request: Request,
+    file: UploadFile = File(
+        ...,
+        description="Image or video file (JPG, PNG, GIF, MP4, MOV, AVI, etc.)"
+    )
+):
+    """
+    Uploads a media file (image or video).
+    - Images → uploaded to FreeImage.Host
+    - Videos → stored in MongoDB GridFS
+    """
+
+    content_type = file.content_type.lower()
+
+    # Determine if the uploaded file is an image
+    if content_type.startswith("image/"):
+        # Upload to FreeImage.Host
+        image_url = await upload_to_freeimage_service(file)
+
+        return APIResponse(
+            status_code=201,
+            data=ImageUploadResponse(
+                url=image_url,
+                media_type="image",
+            ),
+            detail="Image uploaded successfully"
+        )
+
+    # Determine if it’s a video
+    elif content_type.startswith("video/"):
+        video_url = await save_video_to_mongodb(file)
+        full_url = str(request.base_url).rstrip("/") + video_url
+
+        return APIResponse(
+            status_code=201,
+            data=VideoUploadResponse(
+                url=full_url
+              
+            ),
+            detail="Video uploaded successfully"
+        )
+
+    # Unsupported file type
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type: {content_type}"
+        )
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+@router.post(
+    "/",
+    
+    dependencies=[Depends(verify_admin_token)],
+    status_code=status.HTTP_201_CREATED,
+    summary="Upload an image or video",
+    description=(
+        "This endpoint uploads either an image or a video. "
+        "Images are uploaded to FreeImage.Host, while videos are stored "
+        "in MongoDB GridFS. The endpoint automatically detects media type "
+        "based on file MIME type."
+    )
+)
+async def upload_new_content_with_a_category(
+    
+    request: Request,
+    category:CategoryNameEnum=Form(...),
+    file: UploadFile = File(
+        ...,
+        description="Image or video file (JPG, PNG, GIF, MP4, MOV, AVI, etc.)"
+    )
+):
+    """
+    Uploads a media file (image or video).
+    - Images → uploaded to FreeImage.Host
+    - Videos → stored in MongoDB GridFS
+    """
+
+    file_bytes = await file.read()
+
+    # Get filename and content type
+    filename = file.filename
+    content_type = file.content_type
+    media = MediaBase(mediaType="image",category=category)
+    # Determine if the uploaded file is an image
+    if content_type.startswith("image/"):
+        # Upload to FreeImage.Host
+        
+        media.mediaType="image"
+        job_id = celery_app.send_task(name= "celery_worker.create_media_task",args=[media.model_dump(), file_bytes, filename, content_type])
+         
+        return APIResponse(
+            status_code=201,
+            data=f"{job_id}" ,
+            detail="Image Job uploaded successfully"
+        )
+
+    # Determine if it’s a video
+    elif content_type.startswith("video/"):
+        media.mediaType="video"
+        media.requestUrl = str(request.base_url).rstrip("/") 
+        job_id = celery_app.send_task(name= "celery_worker.create_media_task",args=[media.model_dump(), file_bytes, filename, content_type])
+         
+        return APIResponse(
+            status_code=201,
+            data=f"{job_id}" ,
+            detail="Video Job uploaded successfully"
+        )
+
+    # Unsupported file type
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type: {content_type}"
+        )
+
 
 # ------------------------------
 # Upload a new Image

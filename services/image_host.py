@@ -7,6 +7,43 @@ from typing import Literal
 FREEIMAGE_API_KEY = os.environ.get("FREEIMAGE_API_KEY")
 FREEIMAGE_API_URL = "https://freeimage.host/api/1/upload"
 
+
+async def upload_to_freeimage_service_from_bytes(file_bytes: bytes, filename: str, content_type: str) -> str:
+    if not FREEIMAGE_API_KEY:
+        raise HTTPException(500, "API key missing")
+
+    params = {
+        "key": FREEIMAGE_API_KEY,
+        "action": "upload",
+        "format": "json"
+    }
+
+    files_payload = {
+        "source": (filename, file_bytes, content_type)
+    }
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.post(
+                FREEIMAGE_API_URL,
+                params=params,
+                files=files_payload
+            )
+            response.raise_for_status()
+        except httpx.RequestError as e:
+            raise HTTPException(503, f"Connection failed: {e}")
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(e.response.status_code, f"Image host returned error: {e.response.text}")
+
+    try:
+        data = response.json()
+        if data.get("status_code") != 200:
+            raise HTTPException(400, f"Host failed: {data.get('status_txt')}")
+        return data["image"]["url"]
+    except Exception:
+        raise HTTPException(500, f"Invalid host response: {response.text}")
+
+
 # ------------------------------
 # Upload Image Service
 # ------------------------------
