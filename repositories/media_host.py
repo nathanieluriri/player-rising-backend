@@ -4,6 +4,7 @@
 
 # ============================================================================
 
+import os
 from pymongo import ReturnDocument
 from core.database import db
 from fastapi import HTTPException, UploadFile,status
@@ -18,6 +19,13 @@ fs = AsyncIOMotorGridFSBucket(db)
  
 
 async def create_media(media_data: MediaCreate) -> MediaOut:
+    from motor.motor_asyncio import AsyncIOMotorClient
+
+    DB = os.getenv("DB_NAME")
+    MONGO_URL = os.getenv("MONGO_URL", "mongodb://localhost:27017")
+
+    client = AsyncIOMotorClient(MONGO_URL)
+    db = client[DB]
     media_dict = media_data.model_dump()
     result =await db.media.insert_one(media_dict)
     result = await db.media.find_one(filter={"_id":result.inserted_id})
@@ -116,12 +124,21 @@ async def save_video_to_mongodb(file: UploadFile) -> str:
     # 5. Return a URL to access the video
     return f"/videos/{str(video_id)}"
 
+
+
 async def save_video_to_mongodb_from_bytes(
     file_bytes: bytes,
     filename: str,
     content_type: str
 ) -> str:
+    from motor.motor_asyncio import AsyncIOMotorClient
 
+    DB = os.getenv("DB_NAME")
+    MONGO_URL = os.getenv("MONGO_URL", "mongodb://localhost:27017")
+
+    client = AsyncIOMotorClient(MONGO_URL)
+    db = client[DB]
+    fs = AsyncIOMotorGridFSBucket(db)
     # 1. Create GridFS upload stream
     upload_stream = fs.open_upload_stream(
         filename,
