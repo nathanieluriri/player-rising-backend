@@ -35,7 +35,8 @@ async def create_media_task(media_dict: dict,file_bytes: bytes, filename: str, c
         media_data = MediaCreate(**media_dict,url=full_url,name=filename)
     
     
-    return await create_media(media_data)
+    media = await create_media(media_data)
+    return media.model_dump()
 
 
 @celery_app.task(name="celery_worker.update_media_category_task")
