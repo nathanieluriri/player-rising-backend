@@ -391,6 +391,42 @@ async def get_media_by_id(
 
 
 
+# -------------------------------------------------------------------
+# Retrieve a single Media Item
+# -------------------------------------------------------------------
+@router.delete("/{id}", response_model=APIResponse[MediaOut])
+async def delete_media_by_id(
+    id: str = Path(..., description="Media ID (UUID or ObjectId string)")
+):
+    """
+    Delete a single Media item by its ID.
+    """
+    # Depending on your DB schema, you might need to convert id to ObjectId here,
+    # or if you store UUIDs as strings, this is fine.
+    # Assuming standard _id lookup:
+    from bson import ObjectId, errors
+    
+    query = {}
+    # specific check if your IDs are ObjectIds or Strings. 
+    # If uncertain, we can try both or just pass strict string if using UUIDs.
+    try:
+        if ObjectId.is_valid(id):
+             query = {"_id": ObjectId(id)}
+        else:
+             query = {"_id": id} # Fallback for UUIDs stored as strings
+    except:
+         query = {"_id": id}
+
+    item = await delete_media_by_id(id=id)
+    
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Media item not found")
+            
+    return APIResponse(status_code=200, data=item, detail="Media item fetched")
+
+
+
+
 
 # ------------------------------
 # Upload a new Image
