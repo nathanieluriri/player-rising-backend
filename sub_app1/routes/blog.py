@@ -2,6 +2,7 @@ import time
 from fastapi import APIRouter, Body, HTTPException, Query, Path, status
 from typing import List, Optional
 import json
+from schemas.imports import ListOfCategories
 from schemas.response_schema import APIResponse
 from schemas.blog import (
  
@@ -32,7 +33,7 @@ PUBLISHED_FILTER = {"state": BlogStatus.published.value}
 # List all available categories
 # (This endpoint is not for blogs, so it remains unchanged)
 # -------------------------------------------------------------------
-@router.get("/categories", response_model=APIResponse[List[Category]])
+@router.get("/categories", response_model=APIResponse[ListOfCategories])
 async def list_all_categories():
     """
     Retrieves a list of all available blog categories and their slugs.
@@ -44,16 +45,17 @@ async def list_all_categories():
             name=name,
             slug=slug,
             itemIndex=i,
-            totalItems=total
+           
         )
         for i, (name, slug) in enumerate(CATEGORY_PAIRS.items(), start=1)
     ]
+    listOfCategories =ListOfCategories(listOfCategories=categories,totalItems=total)
     return APIResponse(
         status_code=200,
-        data=categories,
+        data=listOfCategories,
         detail="Successfully retrieved all categories."
     )
-
+    
 # -------------------------------------------------------------------
 # Get *Published* Blogs by BlogType
 # -------------------------------------------------------------------

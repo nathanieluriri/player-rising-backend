@@ -165,9 +165,7 @@ CATEGORY_PAIRS: Dict[CategoryNameEnum, CategorySlugEnum] = {
 class Category(BaseModel):
     itemIndex:Optional[int]=None
     name: CategoryNameEnum
-    slug: CategorySlugEnum
-    totalItems:Optional[int]=None
-    
+    slug: CategorySlugEnum    
     @model_validator(mode="after")
     def validate_pair(self):
         if CATEGORY_PAIRS[self.name] != self.slug:
@@ -175,6 +173,10 @@ class Category(BaseModel):
         return self
     
     
+    
+class ListOfCategories(BaseModel):
+    listOfCategories:List[Category]
+    totalItems:int
 
     
 class BlogStatus(str,Enum):
