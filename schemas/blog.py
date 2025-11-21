@@ -480,11 +480,16 @@ class BlogOutLessDetailUserVersion(BaseModel):
     
     @model_validator(mode="before")
     @classmethod
-    def set_excerpt(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        # # 2. Generate Excerpt if missing and parsed exists
-        if not values.get("excerpt",None) or values.get("excerpt",None)=="Article content is currently empty.":
-            values["excerpt"] = cls._generate_excerpt(values.get("currentPageBody",[]))
-        elif not values.get("excerpt",None):
+    def set_excerpt(cls, values: Any) -> Any:
+        # Convert model instance to dict if needed
+        if not isinstance(values, dict):
+            values = values.__dict__
+
+        # Generate excerpt
+        if not values.get("excerpt") or values.get("excerpt") == "Article content is currently empty.":
+            values["excerpt"] = cls._generate_excerpt(values.get("currentPageBody", []))
+
+        elif not values.get("excerpt"):
             values["excerpt"] = "Article content is currently empty."
 
         return values
