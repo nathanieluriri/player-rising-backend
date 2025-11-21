@@ -14,7 +14,8 @@ from schemas.blog import (
     CategoryNameEnum,
     BlogStatus,
     Category,
-    CATEGORY_PAIRS
+    CATEGORY_PAIRS,
+    ListOfBlogs
 )
 from services.blog_service import (
     add_blog,
@@ -59,7 +60,7 @@ async def list_all_categories():
 # -------------------------------------------------------------------
 # Get *Published* Blogs by BlogType
 # -------------------------------------------------------------------
-@router.get("/by-blog-type/{blog_type}", response_model=APIResponse[List[BlogOutLessDetailUserVersion]])
+@router.get("/by-blog-type/{blog_type}", response_model=APIResponse[ListOfBlogs])
 async def list_blogs_by_blog_type(
     blog_type: BlogType = Path(..., description="The type of blog to filter by"),
     start: Optional[int] = Query(0, description="Start index for pagination"),
@@ -94,10 +95,10 @@ async def list_blogs_by_blog_type(
         sort_field="date_created",
         sort_order=-1
     )
-    
+    blogs =ListOfBlogs(blogs=items,totalItems=len(items))
     return APIResponse(
         status_code=200,
-        data=items,
+        data=blogs,
         detail=f"Fetched published blogs with type '{blog_type.value}'"
     )
 
@@ -138,10 +139,10 @@ async def list_blogs_by_category_slug(
         sort_field="date_created",
         sort_order=-1
     )
-    
+    blogs =ListOfBlogs(blogs=items,totalItems=len(items))
     return APIResponse(
         status_code=200,
-        data=items,
+        data=blogs,
         detail=f"Fetched published blogs with category slug '{slug.value}'"
     )
 
@@ -182,10 +183,10 @@ async def list_blogs_by_category_name(
         sort_field="date_created",
         sort_order=-1
     )
-    
+    blogs =ListOfBlogs(blogs=items,totalItems=len(items))
     return APIResponse(
         status_code=200,
-        data=items,
+        data=blogs,
         detail=f"Fetched published blogs with category name '{name.value}'"
     )
 
@@ -226,10 +227,10 @@ async def list_blogs_by_author_name(
         sort_field="date_created",
         sort_order=-1
     )
-    
+    blogs =ListOfBlogs(blogs=items,totalItems=len(items))
     return APIResponse(
         status_code=200,
-        data=items,
+        data=blogs,
         detail=f"Fetched published blogs by author '{author_name}'"
     )
 
@@ -283,8 +284,8 @@ async def list_most_recent_blogs(
     detail_msg = f"Fetched published blogs {start} to {stop} sorted by most recent"
     if parsed_filters:
         detail_msg += " (with additional filters applied)"
-
-    return APIResponse(status_code=200, data=items, detail=detail_msg)
+    blogs =ListOfBlogs(blogs=items,totalItems=len(items))
+    return APIResponse(status_code=200, data=blogs, detail=detail_msg)
 
 # ------------------------------
 # List *Published* Blogs
@@ -328,8 +329,8 @@ async def list_blogs(
         
     if parsed_filters:
         detail_msg += " (with additional filters applied)"
-        
-    return APIResponse(status_code=200, data=items, detail=detail_msg)
+    blogs =ListOfBlogs(blogs=items,totalItems=len(items))
+    return APIResponse(status_code=200, data=blogs, detail=detail_msg)
 
 
 # ------------------------------

@@ -426,7 +426,7 @@ class BlogOutLessDetailUserVersion(BaseModel):
     )
     slug: Optional[str] = None
     excerpt: Optional[str] = None
-    totalItems:Optional[int]=None
+  
     itemIndex:Optional[int]=None
 
     @staticmethod
@@ -608,3 +608,9 @@ class BlogOutUserVersion(BlogBase):
             ObjectId: str,               # keep your ObjectId encoder
         },
     }
+    
+    
+    
+class ListOfBlogs(BaseModel):
+    blogs: List[BlogOutLessDetailUserVersion]
+    totalItems:int
