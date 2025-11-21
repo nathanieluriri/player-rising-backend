@@ -3,6 +3,7 @@ from typing import Any, Dict, Literal, Optional
 from bson import ObjectId
 from pydantic import AliasChoices, BaseModel, Field, model_validator
 from schemas.imports import Category, CategoryNameEnum
+import time
 
 
 class ImageUploadResponse(BaseModel):
@@ -30,9 +31,21 @@ class MediaUpdate(BaseModel):
 class MediaCreate(MediaBase):
     url:str
     name:str
+    date_created: int = Field(default_factory=lambda: int(time.time()))
+    last_updated: int = Field(default_factory=lambda: int(time.time()))
 class MediaOut(MediaCreate):
     totalItems:Optional[int]=None
     itemIndex:Optional[int]=None
+    date_created: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("date_created", "dateCreated"),
+        serialization_alias="dateCreated",
+    )
+    last_updated: Optional[int] = Field(
+        default=None,
+        validation_alias=AliasChoices("last_updated", "lastUpdated"),
+        serialization_alias="lastUpdated",
+    )
     id: Optional[str] = Field(
         default=None,
         validation_alias=AliasChoices("_id", "id"),

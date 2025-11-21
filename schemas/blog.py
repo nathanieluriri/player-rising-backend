@@ -194,7 +194,11 @@ class BlogUpdate(BaseModel):
 
 class BlogOutLessDetail(BaseModel):
     """Output schema for a Blog entry, including MongoDB ID and timestamps."""
-    id: str = Field(default=None, alias="_id")
+    id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("_id", "id"),
+        serialization_alias="id",
+    )
     title: str = Field(..., description="The main title of the article.")
     author: Author
     category: Category
@@ -299,7 +303,11 @@ class BlogOutLessDetail(BaseModel):
 
 class BlogOut(BlogBase):
     """Output schema for a Blog entry, including MongoDB ID and timestamps."""
-    id: str = Field(default=None, alias="_id")
+    id: Optional[str] = Field(
+        default=None,
+        validation_alias=AliasChoices("_id", "id"),
+        serialization_alias="id",
+    )
     state: Optional[BlogStatus] = BlogStatus.draft
     date_created: Optional[int] = Field(
         default=None,

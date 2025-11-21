@@ -38,8 +38,16 @@ async def list_all_categories():
     """
     Retrieves a list of all available blog categories and their slugs.
     """
+    total = len(CATEGORY_PAIRS)
+
     categories = [
-        Category(name=name, slug=slug) for name, slug in CATEGORY_PAIRS.items()
+        Category(
+            name=name,
+            slug=slug,
+            itemIndex=i,
+            totalItems=total
+        )
+        for i, (name, slug) in enumerate(CATEGORY_PAIRS.items(), start=1)
     ]
     return APIResponse(
         status_code=200,
