@@ -34,7 +34,7 @@ class MediaCreate(MediaBase):
     date_created: int = Field(default_factory=lambda: int(time.time()))
     last_updated: int = Field(default_factory=lambda: int(time.time()))
 class MediaOut(MediaCreate):
-    totalIndex:Optional[int]=None
+    totalItems:Optional[int]=None
     itemIndex:Optional[int]=None
     date_created: Optional[int] = Field(
         default=None,
