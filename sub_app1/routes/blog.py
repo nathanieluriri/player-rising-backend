@@ -4,11 +4,10 @@ from typing import List, Optional
 import json
 from schemas.response_schema import APIResponse
 from schemas.blog import (
-    BlogCreate,
-    BlogOut,
-    BlogBase,
-    BlogOutLessDetail,
-    BlogUpdate,
+ 
+    BlogOutLessDetailUserVersion,
+    BlogOutUserVersion,
+ 
     BlogType,
     CategorySlugEnum,
     CategoryNameEnum,
@@ -58,7 +57,7 @@ async def list_all_categories():
 # -------------------------------------------------------------------
 # Get *Published* Blogs by BlogType
 # -------------------------------------------------------------------
-@router.get("/by-blog-type/{blog_type}", response_model=APIResponse[List[BlogOutLessDetail]])
+@router.get("/by-blog-type/{blog_type}", response_model=APIResponse[List[BlogOutLessDetailUserVersion]])
 async def list_blogs_by_blog_type(
     blog_type: BlogType = Path(..., description="The type of blog to filter by"),
     start: Optional[int] = Query(0, description="Start index for pagination"),
@@ -103,7 +102,7 @@ async def list_blogs_by_blog_type(
 # -------------------------------------------------------------------
 # Get *Published* Blogs by Category Slug
 # -------------------------------------------------------------------
-@router.get("/by-category-slug/{slug}", response_model=APIResponse[List[BlogOutLessDetail]])
+@router.get("/by-category-slug/{slug}", response_model=APIResponse[List[BlogOutLessDetailUserVersion]])
 async def list_blogs_by_category_slug(
     slug: CategorySlugEnum = Path(..., description="The category slug to filter by"),
     start: Optional[int] = Query(0, description="Start index for pagination"),
@@ -147,7 +146,7 @@ async def list_blogs_by_category_slug(
 # -------------------------------------------------------------------
 # Get *Published* Blogs by Category Name
 # -------------------------------------------------------------------
-@router.get("/by-category-name/{name}", response_model=APIResponse[List[BlogOutLessDetail]])
+@router.get("/by-category-name/{name}", response_model=APIResponse[List[BlogOutLessDetailUserVersion]])
 async def list_blogs_by_category_name(
     name: CategoryNameEnum = Path(..., description="The category name to filter by"),
     start: Optional[int] = Query(0, description="Start index for pagination"),
@@ -191,7 +190,7 @@ async def list_blogs_by_category_name(
 # -------------------------------------------------------------------
 # Get *Published* Blogs by Author Name
 # -------------------------------------------------------------------
-@router.get("/by-author-name", response_model=APIResponse[List[BlogOutLessDetail]])
+@router.get("/by-author-name", response_model=APIResponse[List[BlogOutLessDetailUserVersion]])
 async def list_blogs_by_author_name(
     author_name: str = Query(..., description="The author name to filter by (exact match)"),
     start: Optional[int] = Query(0, description="Start index for pagination"),
@@ -239,7 +238,7 @@ async def list_blogs_by_author_name(
 # ------------------------------
 # List Most Recent *Published* Blogs
 # ------------------------------
-@router.get("/recent", response_model=APIResponse[List[BlogOutLessDetail]])
+@router.get("/recent", response_model=APIResponse[List[BlogOutLessDetailUserVersion]])
 async def list_most_recent_blogs(
     start: Optional[int] = Query(0, description="Start index for range-based pagination"),
     stop: Optional[int] = Query(50, description="Stop index for range-based pagination"),
@@ -288,7 +287,7 @@ async def list_most_recent_blogs(
 # ------------------------------
 # List *Published* Blogs
 # ------------------------------
-@router.get("/", response_model=APIResponse[List[BlogOutLessDetail]])
+@router.get("/", response_model=APIResponse[List[BlogOutLessDetailUserVersion]])
 async def list_blogs(
     start: Optional[int] = Query(0, description="Start index for range-based pagination"),
     stop: Optional[int] = Query(100, description="Stop index for range-based pagination"),
@@ -334,7 +333,7 @@ async def list_blogs(
 # ------------------------------
 # Retrieve a single *Published* Blog
 # ------------------------------
-@router.get("/{id}", response_model=APIResponse[BlogOutLessDetail])
+@router.get("/{id}", response_model=APIResponse[BlogOutUserVersion])
 async def get_blog_by_id(
     id: str = Path(..., description="blog ID to fetch specific item")
 ):
