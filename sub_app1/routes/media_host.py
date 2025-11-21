@@ -2,6 +2,7 @@ import json
 from typing import List, Literal, Optional
 from fastapi import APIRouter, HTTPException, Query, Path, status
 from repositories.media_host import get_media,get_media_files, MediaOut
+from schemas.media_host import ListOfMediaOut
 from schemas.response_schema import APIResponse
 # Define Router
 router = APIRouter()
@@ -9,7 +10,7 @@ router = APIRouter()
 # -------------------------------------------------------------------
 # Get Media by Type (e.g., 'video', 'image')
 # -------------------------------------------------------------------
-@router.get("/by-type/{media_type}", response_model=APIResponse[List[MediaOut]])
+@router.get("/by-type/{media_type}", response_model=APIResponse[ListOfMediaOut])
 async def list_media_by_type(
     media_type: Literal["video","image"] = Path(..., description="The type of media (e.g., 'video', 'image')"),
     start: Optional[int] = Query(0, description="Start index for pagination"),
@@ -46,17 +47,18 @@ async def list_media_by_type(
         sort_field="date_created",
         sort_order=-1
     )
+    media =ListOfMediaOut(totalItems=len(items),listOfMedia=items)
     
     return APIResponse(
         status_code=200,
-        data=items,
+        data=media,
         detail=f"Fetched media with type '{media_type}'"
     )
 
 # -------------------------------------------------------------------
 # Get Media by Category
 # -------------------------------------------------------------------
-@router.get("/by-category/{category}", response_model=APIResponse[List[MediaOut]])
+@router.get("/by-category/{category}", response_model=APIResponse[ListOfMediaOut])
 async def list_media_by_category(
     category: str = Path(..., description="The category to filter by"),
     start: Optional[int] = Query(0, description="Start index for pagination"),
@@ -92,16 +94,18 @@ async def list_media_by_category(
         sort_order=-1
     )
     
+    media =ListOfMediaOut(totalItems=len(items),listOfMedia=items)
+    
     return APIResponse(
         status_code=200,
-        data=items,
-        detail=f"Fetched media with category '{category}'"
+        data=media,
+        detail=f"Fetched media with category'{category}'"
     )
 
 # -------------------------------------------------------------------
 # List Most Recent Media
 # -------------------------------------------------------------------
-@router.get("/recent", response_model=APIResponse[List[MediaOut]])
+@router.get("/recent", response_model=APIResponse[ListOfMediaOut])
 async def list_most_recent_media(
     start: Optional[int] = Query(0, description="Start index for range-based pagination"),
     stop: Optional[int] = Query(50, description="Stop index for range-based pagination"),
@@ -132,12 +136,18 @@ async def list_most_recent_media(
     )
 
     detail_msg = f"Fetched media {start} to {stop} sorted by most recent"
-    return APIResponse(status_code=200, data=items, detail=detail_msg)
+    media =ListOfMediaOut(totalItems=len(items),listOfMedia=items)
+    
+    return APIResponse(
+        status_code=200,
+        data=media,
+        detail=detail_msg
+    )
 
 # -------------------------------------------------------------------
 # List All Media (Root Endpoint)
 # -------------------------------------------------------------------
-@router.get("/", response_model=APIResponse[List[MediaOut]])
+@router.get("/", response_model=APIResponse[ListOfMediaOut])
 async def list_media(
     start: Optional[int] = Query(0, description="Start index for range-based pagination"),
     stop: Optional[int] = Query(100, description="Stop index for range-based pagination"),
