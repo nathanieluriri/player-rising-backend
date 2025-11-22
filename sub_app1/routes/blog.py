@@ -108,7 +108,7 @@ async def list_blogs_by_blog_type(
 # -------------------------------------------------------------------
 # Get *Published* Blogs by Category Slug
 # -------------------------------------------------------------------
-@router.get("/by-category-slug/{slug}", response_model=APIResponse[ListOfBlogs])
+@router.get("/by-category-slug/{slug}",  response_model=APIResponse[ListOfBlogs])
 async def list_blogs_by_category_slug(
     slug: CategorySlugEnum = Path(..., description="The category slug to filter by"),
     start: Optional[int] = Query(0, description="Start index for pagination"),
@@ -142,7 +142,10 @@ async def list_blogs_by_category_slug(
         sort_field="date_created",
         sort_order=-1
     )
-    blogs =ListOfBlogs(blogs=items,totalItems=len(items))
+    blogs = ListOfBlogs(
+    blogs=[BlogOutLessDetailUserVersion(**item.model_dump()) for item in items],
+    totalItems=len(items)
+)
     return APIResponse(
         status_code=200,
         data=blogs,
@@ -186,7 +189,10 @@ async def list_blogs_by_category_name(
         sort_field="date_created",
         sort_order=-1
     )
-    blogs =ListOfBlogs(blogs=items,totalItems=len(items))
+    blogs = ListOfBlogs(
+    blogs=[BlogOutLessDetailUserVersion(**item.model_dump()) for item in items],
+    totalItems=len(items)
+)
     return APIResponse(
         status_code=200,
         data=blogs,
@@ -196,7 +202,7 @@ async def list_blogs_by_category_name(
 # -------------------------------------------------------------------
 # Get *Published* Blogs by Author Name
 # -------------------------------------------------------------------
-@router.get("/by-author-name", response_model=APIResponse[ListOfBlogs])
+@router.get("/by-author-name",  response_model=APIResponse[ListOfBlogs])
 async def list_blogs_by_author_name(
     author_name: str = Query(..., description="The author name to filter by (exact match)"),
     start: Optional[int] = Query(0, description="Start index for pagination"),
@@ -230,7 +236,10 @@ async def list_blogs_by_author_name(
         sort_field="date_created",
         sort_order=-1
     )
-    blogs =ListOfBlogs(blogs=items,totalItems=len(items))
+    blogs = ListOfBlogs(
+    blogs=[BlogOutLessDetailUserVersion(**item.model_dump()) for item in items],
+    totalItems=len(items)
+)
     return APIResponse(
         status_code=200,
         data=blogs,
@@ -244,7 +253,7 @@ async def list_blogs_by_author_name(
 # ------------------------------
 # List Most Recent *Published* Blogs
 # ------------------------------
-@router.get("/recent", response_model=APIResponse[List[BlogOutLessDetailUserVersion]])
+@router.get("/recent",  response_model=APIResponse[ListOfBlogs])
 async def list_most_recent_blogs(
     start: Optional[int] = Query(0, description="Start index for range-based pagination"),
     stop: Optional[int] = Query(50, description="Stop index for range-based pagination"),
@@ -287,13 +296,16 @@ async def list_most_recent_blogs(
     detail_msg = f"Fetched published blogs {start} to {stop} sorted by most recent"
     if parsed_filters:
         detail_msg += " (with additional filters applied)"
-    blogs =ListOfBlogs(blogs=items,totalItems=len(items))
+    blogs = ListOfBlogs(
+    blogs=[BlogOutLessDetailUserVersion(**item.model_dump()) for item in items],
+    totalItems=len(items)
+)
     return APIResponse(status_code=200, data=blogs, detail=detail_msg)
 
 # ------------------------------
 # List *Published* Blogs
 # ------------------------------
-@router.get("/", response_model=APIResponse[List[BlogOutLessDetailUserVersion]])
+@router.get("/", response_model=APIResponse[ListOfBlogs])
 async def list_blogs(
     start: Optional[int] = Query(0, description="Start index for range-based pagination"),
     stop: Optional[int] = Query(100, description="Stop index for range-based pagination"),
@@ -332,7 +344,10 @@ async def list_blogs(
         
     if parsed_filters:
         detail_msg += " (with additional filters applied)"
-    blogs =ListOfBlogs(blogs=items,totalItems=len(items))
+    blogs = ListOfBlogs(
+    blogs=[BlogOutLessDetailUserVersion(**item.model_dump()) for item in items],
+    totalItems=len(items)
+)
     return APIResponse(status_code=200, data=blogs, detail=detail_msg)
 
 

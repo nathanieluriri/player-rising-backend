@@ -2,6 +2,7 @@ import json
 from typing import List, Literal, Optional
 from fastapi import APIRouter, HTTPException, Query, Path, status
 from repositories.media_host import get_media,get_media_files, MediaOut
+from schemas.imports import CategoryNameEnum
 from schemas.media_host import ListOfMediaOut
 from schemas.response_schema import APIResponse
 # Define Router
@@ -60,7 +61,7 @@ async def list_media_by_type(
 # -------------------------------------------------------------------
 @router.get("/by-category/{category}", response_model=APIResponse[ListOfMediaOut])
 async def list_media_by_category(
-    category: str = Path(..., description="The category to filter by"),
+    category: CategoryNameEnum = Path(..., description="The category to filter by"),
     start: Optional[int] = Query(0, description="Start index for pagination"),
     stop: Optional[int] = Query(50, description="Stop index for pagination"),
     filters: Optional[str] = Query(None, description="Optional JSON string of additional MongoDB filter criteria")
@@ -181,8 +182,9 @@ async def list_media(
         
     if parsed_filters:
         detail_msg += " (with additional filters applied)"
-        
-    return APIResponse(status_code=200, data=items, detail=detail_msg)
+    media =ListOfMediaOut(totalItems=len(items),listOfMedia=items)
+    
+    return APIResponse(status_code=200, data=media, detail=detail_msg)
 
 # -------------------------------------------------------------------
 # Retrieve a single Media Item
