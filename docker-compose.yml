@@ -5,7 +5,7 @@ services:
     build: .
     command: uvicorn main:app --host 0.0.0.0 --port 7860 --workers 5 --timeout-keep-alive 120
     ports:
-      - "0:7860"
+      - "7860:7860"
     environment:
       - CELERY_BROKER_URL=${CELERY_BROKER_URL}
       - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
@@ -56,7 +56,7 @@ services:
     build: .                       # 👈 use your app image
     command: celery -A celery_worker.celery_app flower --port=5555
     ports:
-      - "0:5555" 
+      - "5555:5555"
     environment:
       - CELERY_BROKER_URL=${CELERY_BROKER_URL}
       - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
