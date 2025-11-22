@@ -60,7 +60,7 @@ async def list_all_categories():
 # -------------------------------------------------------------------
 # Get *Published* Blogs by BlogType
 # -------------------------------------------------------------------
-@router.get("/by-blog-type/{blog_type}")
+@router.get("/by-blog-type/{blog_type}", response_model=APIResponse[ListOfBlogs])
 async def list_blogs_by_blog_type(
     blog_type: BlogType = Path(..., description="The type of blog to filter by"),
     start: Optional[int] = Query(0, description="Start index for pagination"),
@@ -95,7 +95,10 @@ async def list_blogs_by_blog_type(
         sort_field="date_created",
         sort_order=-1
     )
-    blogs =ListOfBlogs(blogs=items,totalItems=len(items))
+    blogs = ListOfBlogs(
+    blogs=[BlogOutLessDetailUserVersion(**item.model_dump()) for item in items],
+    totalItems=len(items)
+)
     return APIResponse(
         status_code=200,
         data=blogs,
@@ -105,7 +108,7 @@ async def list_blogs_by_blog_type(
 # -------------------------------------------------------------------
 # Get *Published* Blogs by Category Slug
 # -------------------------------------------------------------------
-@router.get("/by-category-slug/{slug}", response_model=APIResponse[List[BlogOutLessDetailUserVersion]])
+@router.get("/by-category-slug/{slug}", response_model=APIResponse[ListOfBlogs])
 async def list_blogs_by_category_slug(
     slug: CategorySlugEnum = Path(..., description="The category slug to filter by"),
     start: Optional[int] = Query(0, description="Start index for pagination"),
@@ -149,7 +152,7 @@ async def list_blogs_by_category_slug(
 # -------------------------------------------------------------------
 # Get *Published* Blogs by Category Name
 # -------------------------------------------------------------------
-@router.get("/by-category-name/{name}", response_model=APIResponse[List[BlogOutLessDetailUserVersion]])
+@router.get("/by-category-name/{name}", response_model=APIResponse[ListOfBlogs])
 async def list_blogs_by_category_name(
     name: CategoryNameEnum = Path(..., description="The category name to filter by"),
     start: Optional[int] = Query(0, description="Start index for pagination"),
@@ -193,7 +196,7 @@ async def list_blogs_by_category_name(
 # -------------------------------------------------------------------
 # Get *Published* Blogs by Author Name
 # -------------------------------------------------------------------
-@router.get("/by-author-name", response_model=APIResponse[List[BlogOutLessDetailUserVersion]])
+@router.get("/by-author-name", response_model=APIResponse[ListOfBlogs])
 async def list_blogs_by_author_name(
     author_name: str = Query(..., description="The author name to filter by (exact match)"),
     start: Optional[int] = Query(0, description="Start index for pagination"),
