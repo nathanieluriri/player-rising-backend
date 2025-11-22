@@ -3,7 +3,7 @@ from typing import List, Literal, Optional
 from fastapi import APIRouter, HTTPException, Query, Path, status
 from repositories.media_host import get_media,get_media_files, MediaOut
 from schemas.imports import CategoryNameEnum
-from schemas.media_host import ListOfMediaOut
+from schemas.media_host import ListOfMediaOut, MediaOutUser
 from schemas.response_schema import APIResponse
 # Define Router
 router = APIRouter()
@@ -48,8 +48,10 @@ async def list_media_by_type(
         sort_field="date_created",
         sort_order=-1
     )
-    media =ListOfMediaOut(totalItems=len(items),listOfMedia=items)
-    
+    media = ListOfMediaOut(
+    listOfMedia=[MediaOutUser(**item.model_dump()) for item in items],
+    totalItems=len(items)
+)
     return APIResponse(
         status_code=200,
         data=media,
@@ -94,9 +96,10 @@ async def list_media_by_category(
         sort_field="date_created",
         sort_order=-1
     )
-    
-    media =ListOfMediaOut(totalItems=len(items),listOfMedia=items)
-    
+    media = ListOfMediaOut(
+    listOfMedia=[MediaOutUser(**item.model_dump()) for item in items],
+    totalItems=len(items)
+)
     return APIResponse(
         status_code=200,
         data=media,
@@ -137,8 +140,10 @@ async def list_most_recent_media(
     )
 
     detail_msg = f"Fetched media {start} to {stop} sorted by most recent"
-    media =ListOfMediaOut(totalItems=len(items),listOfMedia=items)
-    
+    media = ListOfMediaOut(
+    listOfMedia=[MediaOutUser(**item.model_dump()) for item in items],
+    totalItems=len(items)
+)
     return APIResponse(
         status_code=200,
         data=media,
@@ -182,8 +187,11 @@ async def list_media(
         
     if parsed_filters:
         detail_msg += " (with additional filters applied)"
-    media =ListOfMediaOut(totalItems=len(items),listOfMedia=items)
-    
+ 
+    media = ListOfMediaOut(
+    listOfMedia=[MediaOutUser(**item.model_dump()) for item in items],
+    totalItems=len(items)
+)
     return APIResponse(status_code=200, data=media, detail=detail_msg)
 
 # -------------------------------------------------------------------
