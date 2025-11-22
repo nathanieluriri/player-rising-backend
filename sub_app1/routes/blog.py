@@ -60,7 +60,7 @@ async def list_all_categories():
 # -------------------------------------------------------------------
 # Get *Published* Blogs by BlogType
 # -------------------------------------------------------------------
-@router.get("/by-blog-type/{blog_type}", response_model=APIResponse[ListOfBlogs])
+@router.get("/by-blog-type/{blog_type}")
 async def list_blogs_by_blog_type(
     blog_type: BlogType = Path(..., description="The type of blog to filter by"),
     start: Optional[int] = Query(0, description="Start index for pagination"),
