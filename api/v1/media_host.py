@@ -192,6 +192,7 @@ async def upload_new_content_with_a_category(
 # -------------------------------------------------------------------
 @router.get("/by-type/{media_type}", response_model=APIResponse[List[MediaOut]])
 async def list_media_by_type(
+     dependencies=[Depends(verify_admin_token)],
     media_type: str = Path(..., description="The type of media (e.g., 'video', 'image')"),
     start: Optional[int] = Query(0, description="Start index for pagination"),
     stop: Optional[int] = Query(50, description="Stop index for pagination"),
@@ -239,6 +240,7 @@ async def list_media_by_type(
 # -------------------------------------------------------------------
 @router.get("/by-category/{category}", response_model=APIResponse[List[MediaOut]])
 async def list_media_by_category(
+     dependencies=[Depends(verify_admin_token)],
     category: str = Path(..., description="The category to filter by"),
     start: Optional[int] = Query(0, description="Start index for pagination"),
     stop: Optional[int] = Query(50, description="Stop index for pagination"),
@@ -282,7 +284,7 @@ async def list_media_by_category(
 # -------------------------------------------------------------------
 # List Most Recent Media
 # -------------------------------------------------------------------
-@router.get("/recent", response_model=APIResponse[List[MediaOut]])
+@router.get("/recent",  dependencies=[Depends(verify_admin_token)], response_model=APIResponse[List[MediaOut]])
 async def list_most_recent_media(
     start: Optional[int] = Query(0, description="Start index for range-based pagination"),
     stop: Optional[int] = Query(50, description="Stop index for range-based pagination"),
@@ -318,7 +320,7 @@ async def list_most_recent_media(
 # -------------------------------------------------------------------
 # List All Media (Root Endpoint)
 # -------------------------------------------------------------------
-@router.get("/", response_model=APIResponse[List[MediaOut]])
+@router.get("/",  dependencies=[Depends(verify_admin_token)], response_model=APIResponse[List[MediaOut]])
 async def list_media(
     start: Optional[int] = Query(0, description="Start index for range-based pagination"),
     stop: Optional[int] = Query(100, description="Stop index for range-based pagination"),
@@ -358,7 +360,7 @@ async def list_media(
 # -------------------------------------------------------------------
 # Retrieve a single Media Item
 # -------------------------------------------------------------------
-@router.get("/{id}", response_model=APIResponse[MediaOut])
+@router.get("/{id}",  dependencies=[Depends(verify_admin_token)], response_model=APIResponse[MediaOut])
 async def get_media_by_id(
     id: str = Path(..., description="Media ID (UUID or ObjectId string)")
 ):
@@ -396,6 +398,7 @@ async def get_media_by_id(
 # -------------------------------------------------------------------
 @router.delete("/{id}")
 async def delete_media_by_id(
+     dependencies=[Depends(verify_admin_token)],
     id: str = Path(..., description="Media ID (UUID or ObjectId string)")
 ):
     """
