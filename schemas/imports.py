@@ -515,5 +515,6 @@ class Page(BaseModel):
 class SearchQuery(BaseModel):
     title: Optional[str] = Field(None, description="Search blog titles")
     author: Optional[str] = Field(None, description="Search blog authors")
-
+    start:Optional[int]=0
+    stop:Optional[int]=100
   

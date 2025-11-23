@@ -14,13 +14,13 @@ async def search_blogs_service(query_params: SearchQuery):
         filters["title"] = {"$regex": query_params.title, "$options": "i"}
 
     if query_params.author:
-        filters["author"] = {"$regex": query_params.author, "$options": "i"}
+        filters["author.name"] = {"$regex": query_params.author, "$options": "i"}
 
     filters["state"] = "published"
 
     # Pagination values
-    skip = 0
-    limit = 100
+    skip = query_params.start
+    limit = query_params.stop
 
     # Call repo (repo must expose find-based search)
     results = await search_blogs_repo(filters, skip=skip, limit=limit)
