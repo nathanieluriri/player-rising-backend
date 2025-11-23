@@ -7,3 +7,14 @@ class BlogType(str,Enum):
     hero_section="hero-section"
     normal="normal"
     
+
+
+class SortType(str,Enum):
+    newest= "newest"
+    oldest = "oldest"
+    mostRecentlyUpdated="mostRecentlyUpdated"
+    leastRecentlyUpdated="leastRecentlyUpdated"
+    latestPublished="latestPublished"
+    earliestPublished="earliestPublished"
+    
+    

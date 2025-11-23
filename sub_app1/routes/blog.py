@@ -4,8 +4,8 @@ from typing import List, Optional
 import json
 from schemas.imports import ListOfCategories
 from schemas.response_schema import APIResponse
-from sub_app1.services.utils import get_path_filter
-from sub_app1.schemas.imports import BlogType
+from sub_app1.services.utils import get_path_filter, get_sort
+from sub_app1.schemas.imports import BlogType, SortType
 from schemas.blog import (
  
     BlogOutLessDetailUserVersion,
@@ -189,26 +189,18 @@ async def list_blogs_by_author_name(
 async def list_blogs(
     start: Optional[int] = Query(0, description="Start index for range-based pagination"),
     stop: Optional[int] = Query(100, description="Stop index for range-based pagination"),
-    filters: Optional[str] = Query(None, description="Optional JSON string of MongoDB filter criteria (e.g., '{\"field\": \"value\"}')")
+    sort: Optional[SortType] = Query(SortType.newest,description='Optional Sort string describing MongoDB sort instructions ')
 ):
     """
     Retrieves a list of *published* Blogs with pagination and optional filtering.
     """
     parsed_filters = {}
 
-    if filters:
-        try:
-            parsed_filters = json.loads(filters)
-        except json.JSONDecodeError:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid JSON format for 'filters' query parameter."
-            )
-
-    # Merge filters: Published status always overrides query filters
     final_filters = parsed_filters.copy()
     final_filters.update(PUBLISHED_FILTER) # Enforce published
-
+    sort_info = get_sort(sort.value)
+    field = sort_info["sort_field"]
+    order = sort_info["sort_order"]
     # Determine Pagination
     if start is not None or stop is not None:
         if start is None or stop is None:
@@ -216,10 +208,10 @@ async def list_blogs(
         if stop < start:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="'stop' cannot be less than 'start'.")
         
-        items = await retrieve_blogs(filters=final_filters, start=start, stop=stop)
+        items = await retrieve_blogs(filters=final_filters, start=start, stop=stop,sort_field=field,sort_order=order)
         detail_msg = "Fetched published blogs successfully"
     else:
-        items = await retrieve_blogs(filters=final_filters, start=0, stop=100)
+        items = await retrieve_blogs(filters=final_filters, start=0, stop=100,sort_field=field,sort_order=order)
         detail_msg = "Fetched first 100 published records successfully"
         
     if parsed_filters:
