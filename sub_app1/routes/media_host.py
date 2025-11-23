@@ -2,7 +2,7 @@ import json
 from typing import List, Literal, Optional
 from fastapi import APIRouter, HTTPException, Query, Path, status
 from repositories.media_host import get_media,get_media_files, MediaOut
-from schemas.imports import CategoryNameEnum
+from schemas.imports import CATEGORY_PAIRS, CategoryNameEnum, CategorySlugEnum
 from schemas.media_host import ListOfMediaOut, MediaOutUser
 from schemas.response_schema import APIResponse
 # Define Router
@@ -16,7 +16,7 @@ async def list_media_by_type(
     media_type: Literal["video","image"] = Path(..., description="The type of media (e.g., 'video', 'image')"),
     start: Optional[int] = Query(0, description="Start index for pagination"),
     stop: Optional[int] = Query(50, description="Stop index for pagination"),
-    filters: Optional[str] = Query(None, description="Optional JSON string of additional MongoDB filter criteria")
+ 
 ):
     """
     Retrieves media files filtered by a specific `mediaType`.
@@ -24,15 +24,7 @@ async def list_media_by_type(
     path_filter = {"mediaType": media_type}
     
     parsed_filters = {}
-    if filters:
-        try:
-            parsed_filters = json.loads(filters)
-        except json.JSONDecodeError:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid JSON format for 'filters' query parameter."
-            )
-            
+     
     # Merge filters: Path filter overrides query filters
     final_filters = parsed_filters.copy()
     final_filters.update(path_filter)
@@ -63,7 +55,7 @@ async def list_media_by_type(
 # -------------------------------------------------------------------
 @router.get("/by-category/{category}", response_model=APIResponse[ListOfMediaOut])
 async def list_media_by_category(
-    category: CategoryNameEnum = Path(..., description="The category to filter by"),
+    category: CategorySlugEnum = Path(..., description="The category to filter by"),
     start: Optional[int] = Query(0, description="Start index for pagination"),
     stop: Optional[int] = Query(50, description="Stop index for pagination"),
     filters: Optional[str] = Query(None, description="Optional JSON string of additional MongoDB filter criteria")
@@ -71,7 +63,8 @@ async def list_media_by_category(
     """
     Retrieves media files filtered by a specific `category`.
     """
-    path_filter = {"category": category}
+    category_name = CATEGORY_PAIRS.get(category)
+    path_filter = {"category": category_name}
     
     parsed_filters = {}
     if filters:
