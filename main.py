@@ -83,6 +83,7 @@ app = FastAPI(
     
     lifespan= lifespan,
     title="REST API",
+    summary="THIS IS JUST A TEST TO SEE IF AUTOMATED DEPLOYMENT IS WORKING"
      
 )
 app.add_middleware(RequestTimingMiddleware)
