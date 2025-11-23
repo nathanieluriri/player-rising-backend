@@ -541,3 +541,9 @@ class ListOfBlogs(BaseModel):
     totalItems:int
     blogs: List[BlogOutLessDetailUserVersion]
     
+    
+class ListOfBlogsWithSameCategories(BaseModel):
+    totalItems:int
+    category:Optional[CategoryNameEnum]=None
+    blogs: List[BlogOutLessDetailUserVersion]
+    

@@ -17,7 +17,8 @@ from schemas.blog import (
     BlogStatus,
     Category,
     CATEGORY_PAIRS,
-    ListOfBlogs
+    ListOfBlogs,
+    ListOfBlogsWithSameCategories
 )
 from services.blog_service import (
     add_blog,
@@ -108,7 +109,7 @@ async def list_blogs_by_blog_type(
 # -------------------------------------------------------------------
 # Get *Published* Blogs by Category Slug
 # -------------------------------------------------------------------
-@router.get("/by-category-slug/{slug}",  response_model=APIResponse[ListOfBlogs])
+@router.get("/by-category-slug/{slug}",  response_model=APIResponse[ListOfBlogsWithSameCategories])
 async def list_blogs_by_category_slug(
     slug: CategorySlugEnum = Path(..., description="The category slug to filter by"),
     start: Optional[int] = Query(0, description="Start index for pagination"),
@@ -137,13 +138,13 @@ async def list_blogs_by_category_slug(
         sort_field=field,
         sort_order=order
     )
-    blogs = ListOfBlogs(
-    blogs=[BlogOutLessDetailUserVersion(**item.model_dump()) for item in items],
-    totalItems=len(items)
-)
+    list_of_blogs = ListOfBlogsWithSameCategories( 
+        blogs=[BlogOutLessDetailUserVersion(**item.model_dump()) for item in items],
+        totalItems=len(items),
+        category=items[0].category.name if items else None )
     return APIResponse(
         status_code=200,
-        data=blogs,
+        data=list_of_blogs,
         detail=f"Fetched published blogs with category slug '{slug.value}'"
     )
 
