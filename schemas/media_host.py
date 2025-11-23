@@ -78,14 +78,31 @@ class MediaOutUser(MediaCreate):
         validation_alias=AliasChoices("_id", "id"),
         serialization_alias="id",
     )
+    @staticmethod
+    def convert_http_to_https(value: str) -> str:
+        """Convert an http URL to https if it starts with http://"""
+        if isinstance(value, str) and value.startswith("http://"):
+            return "https://" + value[len("http://"):]
+        return value
     @model_validator(mode="before")
     @classmethod
-    def convert_objectid(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+    def convert_objectid_and_urls(cls, values: Any) -> Dict[str, Any]:
+        # If values is not a dict, return it unchanged
+        if not isinstance(values, dict):
+            return values
+
         # 1. coerce ObjectId to str for _id if needed
         if "_id" in values and isinstance(values["_id"], ObjectId):
             values["_id"] = str(values["_id"])
+        
+        # 2. Convert http URLs to https for all string fields
+        for k, v in values.items():
+            if isinstance(v, str):
+                values[k] = cls.convert_http_to_https(v)
+            elif isinstance(v, list):
+                values[k] = [cls.convert_http_to_https(item) if isinstance(item, str) else item for item in v]
+        
         return values
-    
     
 class ListOfMediaOut(BaseModel):
     totalItems:Optional[int]=None
