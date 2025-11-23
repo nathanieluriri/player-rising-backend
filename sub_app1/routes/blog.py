@@ -280,7 +280,14 @@ async def search_published_blogs(
     Executes the MongoDB search using regex on title and/or author.
     """
 
- 
+    # 1. Validation (Handle the mandatory search term)
+    if not query_params.query or not query_params.query.strip():
+        # Raise an exception for an invalid query
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Search query 'query' parameter cannot be empty."
+        )
+
     # 2. Service Call
     search_results = await search_blogs_service(query_params)
 
