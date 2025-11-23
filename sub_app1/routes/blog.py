@@ -85,13 +85,15 @@ async def list_blogs_by_blog_type(
     final_filters = parsed_filters.copy()
     final_filters.update(path_filter)
     final_filters.update(PUBLISHED_FILTER) # Enforce published
-
+    sort_info = get_sort(sort.value)
+    field = sort_info["sort_field"]
+    order = sort_info["sort_order"]
     items = await retrieve_blogs(
         filters=final_filters,
         start=start,
         stop=stop,
-        sort_field="date_created",
-        sort_order=-1
+        sort_field=field,
+        sort_order=order
     )
     blogs = ListOfBlogs(
     blogs=[BlogOutLessDetailUserVersion(**item.model_dump()) for item in items],
@@ -125,13 +127,15 @@ async def list_blogs_by_category_slug(
     final_filters = parsed_filters.copy()
     final_filters.update(path_filter)
     final_filters.update(PUBLISHED_FILTER) # Enforce published
-
+    sort_info = get_sort(sort.value)
+    field = sort_info["sort_field"]
+    order = sort_info["sort_order"]
     items = await retrieve_blogs(
         filters=final_filters,
         start=start,
         stop=stop,
-        sort_field="date_created",
-        sort_order=-1
+        sort_field=field,
+        sort_order=order
     )
     blogs = ListOfBlogs(
     blogs=[BlogOutLessDetailUserVersion(**item.model_dump()) for item in items],
@@ -164,13 +168,17 @@ async def list_blogs_by_author_name(
     final_filters = parsed_filters.copy()
     final_filters.update(path_filter)
     final_filters.update(PUBLISHED_FILTER) # Enforce published
-
+    
+    sort_info = get_sort(sort.value)
+    field = sort_info["sort_field"]
+    order = sort_info["sort_order"]
+    
     items = await retrieve_blogs(
         filters=final_filters,
         start=start,
         stop=stop,
-        sort_field="date_created",
-        sort_order=-1
+        sort_field=field,
+        sort_order=order
     )
     blogs = ListOfBlogs(
     blogs=[BlogOutLessDetailUserVersion(**item.model_dump()) for item in items],
