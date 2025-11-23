@@ -63,7 +63,8 @@ async def list_media_by_category(
     """
     Retrieves media files filtered by a specific `category`.
     """
-    category_name = CATEGORY_PAIRS.get(category)
+    REVERSED_CATEGORY_PAIRS = {v: k for k, v in CATEGORY_PAIRS.items()}
+    category_name =REVERSED_CATEGORY_PAIRS.get(category)
     path_filter = {"category": category_name.value}
     
     parsed_filters = {}
