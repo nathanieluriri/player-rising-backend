@@ -3,9 +3,9 @@ from typing import Optional
 
 BLOG_TYPE_MAP = {
     "hero-section": {"blogType": "hero section"},
-    "about-section": {"blogType": "about section"},
-    "footer-section": {"blogType": "footer section"},
-    "sidebar-section": {"blogType": "sidebar section"},
+    "editors-pick": {"blogType":  "editors pick"},
+    "featured": {"blogType": "featured story"},
+    "normal": {"blogType": "normal"},
 }
 def get_path_filter(blog_type):
     try:

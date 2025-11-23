@@ -538,5 +538,6 @@ class BlogOutUserVersion(BlogBase):
     
     
 class ListOfBlogs(BaseModel):
-    blogs: List[BlogOutLessDetailUserVersion]
     totalItems:int
+    blogs: List[BlogOutLessDetailUserVersion]
+    

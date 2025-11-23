@@ -66,15 +66,18 @@ async def list_all_categories():
 async def list_blogs_by_blog_type(
     blog_type: BlogType = Path(..., description="The type of blog to filter by"),
     start: Optional[int] = Query(0, description="Start index for pagination"),
-    stop: Optional[int] = Query(50, description="Stop index for pagination")
+    stop: Optional[int] = Query(50, description="Stop index for pagination"),
+    sort: Optional[SortType] = Query(SortType.newest,description='Optional Sort string describing MongoDB sort instructions ')
 ):
     """
     Retrieves *published* blogs filtered by a specific `BlogType`.
     Supports additional filtering and pagination.
     """
     
-
-    path_filter= get_path_filter(blog_type=blog_type.value)
+    try:
+        path_filter= get_path_filter(blog_type=blog_type)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"This is from the get path filter {e}")
     
     parsed_filters = {}
      
@@ -108,6 +111,7 @@ async def list_blogs_by_category_slug(
     slug: CategorySlugEnum = Path(..., description="The category slug to filter by"),
     start: Optional[int] = Query(0, description="Start index for pagination"),
     stop: Optional[int] = Query(50, description="Stop index for pagination"),
+    sort: Optional[SortType] = Query(SortType.newest,description='Optional Sort string describing MongoDB sort instructions ')
 ):
     """
     Retrieves *published* blogs filtered by a specific `category.slug`.
@@ -147,6 +151,7 @@ async def list_blogs_by_author_name(
     author_name: str = Query(..., description="The author name to filter by (exact match)"),
     start: Optional[int] = Query(0, description="Start index for pagination"),
     stop: Optional[int] = Query(50, description="Stop index for pagination"),
+    sort: Optional[SortType] = Query(SortType.newest,description='Optional Sort string describing MongoDB sort instructions ')
 ):
     """
     Retrieves *published* blogs filtered by a specific `author.name`.
