@@ -10,6 +10,8 @@ from pydantic.error_wrappers import ValidationError
 import json
 
 from typing import List, Optional, Union, Literal
+
+
 # --- Nested Schemas ---
 
 class Author(BaseModel):
@@ -508,3 +510,10 @@ def normalize_document(blocks_json: List[Dict[str, Any]]) -> List[Dict[str, Any]
 class Page(BaseModel):
     pageNumber:int
     pageBody:List[Dict[str, Any]]
+    
+    
+class SearchQuery(BaseModel):
+    title: Optional[str] = Field(None, description="Search blog titles")
+    author: Optional[str] = Field(None, description="Search blog authors")
+
+  

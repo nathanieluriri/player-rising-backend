@@ -1,9 +1,10 @@
 import time
-from fastapi import APIRouter, Body, HTTPException, Query, Path, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, Path, status
 from typing import List, Optional
 import json
-from schemas.imports import ListOfCategories
+from schemas.imports import ListOfCategories, SearchQuery
 from schemas.response_schema import APIResponse
+from sub_app1.services.blog import search_blogs_service    
 from sub_app1.services.utils import get_path_filter, get_sort
 from sub_app1.schemas.imports import BlogType, SortType
 from schemas.blog import (
@@ -262,3 +263,30 @@ async def get_blog_by_id(
         )
             
     return APIResponse(status_code=200, data=item, detail="blog item fetched")
+
+# ------------------------------------------------
+# Searches and returns Multiple *Published* Blogs
+# ------------------------------------------------
+@router.get(
+    "/search/",
+ 
+    summary="Search blog articles by keywords",
+    description="Finds and ranks published articles by title or author with pagination."
+)
+async def search_published_blogs(
+    query_params: SearchQuery = Depends()
+):
+    """
+    Executes the MongoDB search using regex on title and/or author.
+    """
+
+ 
+    # 2. Service Call
+    search_results = await search_blogs_service(query_params)
+
+    # 3. Response Formatting
+    return APIResponse(
+        status_code=200,
+        data=search_results,
+        detail=f"Found {search_results.totalItems} matching blog items."
+    )

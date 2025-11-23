@@ -428,7 +428,13 @@ class BlogOutLessDetailUserVersion(BaseModel):
     excerpt: Optional[str] = None
   
     itemIndex:Optional[int]=None
-
+    @model_validator(mode="before")
+    @classmethod
+    def convert_objectid(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        # coerce ObjectId to str for _id if needed
+        if "_id" in values and isinstance(values["_id"], ObjectId):
+            values["_id"] = str(values["_id"])
+        return values
  
 
     model_config = {
