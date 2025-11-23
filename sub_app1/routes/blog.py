@@ -281,11 +281,11 @@ async def search_published_blogs(
     """
 
     # 1. Validation (Handle the mandatory search term)
-    if not query_params.query or not query_params.query.strip():
+    if ( not query_params.title or not query_params.title.strip() ) and ( not query_params.author or not query_params.author.strip()):
         # Raise an exception for an invalid query
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Search query 'query' parameter cannot be empty."
+            detail="Search query 'title' and 'author' parameter cannot be empty."
         )
 
     # 2. Service Call
