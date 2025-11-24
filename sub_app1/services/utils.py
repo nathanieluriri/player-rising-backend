@@ -1,7 +1,7 @@
 from typing import Optional
 import requests
 import urllib.parse
-
+from functools import lru_cache
 BLOG_TYPE_MAP = {
     "hero-section": {"blogType": "hero section"},
     "editors-pick": {"blogType":  "editors pick"},
@@ -35,7 +35,7 @@ def get_sort(sort_param: Optional[str]):
         raise ValueError(f"Unsupported sort option: {sort_param!r}")
 
 
-
+@lru_cache(maxsize=100)
 def get_club_fanart_url_robust(team_name: str) -> Optional[str]:
     """
     Retrieves a suitable image URL for a given football club name from TheSportsDB API,
@@ -58,7 +58,7 @@ def get_club_fanart_url_robust(team_name: str) -> Optional[str]:
     ]
     
     # 1. Define the base API details
-    BASE_URL = "https://www.thesportsdb.com/api/v1/json/1/"
+    BASE_URL = "https://www.thesportsdb.com/api/v1/json/3/"
     ENDPOINT = "searchteams.php"
 
     # URL-encode the team name for safe inclusion in the query string
