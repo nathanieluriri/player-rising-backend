@@ -5,7 +5,7 @@ import json
 from schemas.imports import ListOfCategories, SearchQuery
 from schemas.response_schema import APIResponse
 from sub_app1.services.blog import search_blogs_service    
-from sub_app1.services.utils import get_path_filter, get_sort
+from sub_app1.services.utils import get_club_fanart_url_robust, get_path_filter, get_sort
 from sub_app1.schemas.imports import BlogType, SortType
 from schemas.blog import (
  
@@ -47,7 +47,9 @@ async def list_all_categories():
 
     categories = [
         Category(
+            imageUrl=get_club_fanart_url_robust(name),
             name=name,
+            
             slug=slug,
             itemIndex=i,
            

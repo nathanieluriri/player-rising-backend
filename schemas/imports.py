@@ -165,6 +165,7 @@ CATEGORY_PAIRS: Dict[CategoryNameEnum, CategorySlugEnum] = {
 }
 
 class Category(BaseModel):
+    imageUrl:Optional[str]=None
     itemIndex:Optional[int]=None
     name: CategoryNameEnum
     slug: CategorySlugEnum    
