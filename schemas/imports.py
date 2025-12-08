@@ -119,49 +119,53 @@ class CategoryNameEnum(str, Enum):
 # --- CATEGORY_PAIRS dictionary creation ---
 
 CATEGORY_PAIRS: Dict[CategoryNameEnum, CategorySlugEnum] = {
-    # Premier League (England)
+     CategoryNameEnum.ARSENAL: CategorySlugEnum.ARSENAL,
     CategoryNameEnum.MANCHESTER_UNITED: CategorySlugEnum.MANCHESTER_UNITED,
-    CategoryNameEnum.MANCHESTER_CITY: CategorySlugEnum.MANCHESTER_CITY,
-    CategoryNameEnum.ARSENAL: CategorySlugEnum.ARSENAL,
-    CategoryNameEnum.CHELSEA: CategorySlugEnum.CHELSEA,
-    CategoryNameEnum.LIVERPOOL: CategorySlugEnum.LIVERPOOL,
-    CategoryNameEnum.TOTTENHAM: CategorySlugEnum.TOTTENHAM,
-    CategoryNameEnum.LEICESTER: CategorySlugEnum.LEICESTER,
-    CategoryNameEnum.EVERTON: CategorySlugEnum.EVERTON,
-    CategoryNameEnum.WEST_HAM: CategorySlugEnum.WEST_HAM,
-    CategoryNameEnum.NEWCASTLE: CategorySlugEnum.NEWCASTLE,
-
-    # La Liga (Spain)
-    CategoryNameEnum.BARCELONA: CategorySlugEnum.BARCELONA,
-    CategoryNameEnum.REAL_MADRID: CategorySlugEnum.REAL_MADRID,
-    CategoryNameEnum.ATLETICO_MADRID: CategorySlugEnum.ATLETICO_MADRID,
-    CategoryNameEnum.SEVILLA: CategorySlugEnum.SEVILLA,
-    CategoryNameEnum.VALENCIA: CategorySlugEnum.VALENCIA,
-
-    # Bundesliga (Germany)
-    CategoryNameEnum.BAYERN_MUNICH: CategorySlugEnum.BAYERN_MUNICH,
-    CategoryNameEnum.BORUSSIA_DORTMUND: CategorySlugEnum.BORUSSIA_DORTMUND,
-    CategoryNameEnum.RB_LEIPZIG: CategorySlugEnum.RB_LEIPZIG,
-    CategoryNameEnum.SCHALKE: CategorySlugEnum.SCHALKE,
-
-    # Serie A (Italy)
-    CategoryNameEnum.JUVENTUS: CategorySlugEnum.JUVENTUS,
-    CategoryNameEnum.INTER_MILAN: CategorySlugEnum.INTER_MILAN,
-    CategoryNameEnum.AC_MILAN: CategorySlugEnum.AC_MILAN,
-    CategoryNameEnum.NAPOLI: CategorySlugEnum.NAPOLI,
-    CategoryNameEnum.ROMA: CategorySlugEnum.ROMA,
-
-    # Ligue 1 (France)
-    CategoryNameEnum.PSG: CategorySlugEnum.PSG,
-    CategoryNameEnum.OLYMPIQUE_LYONNAIS: CategorySlugEnum.OLYMPIQUE_LYONNAIS,
     CategoryNameEnum.MARSEILLE: CategorySlugEnum.MARSEILLE,
+      CategoryNameEnum.NAPOLI: CategorySlugEnum.NAPOLI,
+    # Premier League (England)
+    
+    # CategoryNameEnum.MANCHESTER_CITY: CategorySlugEnum.MANCHESTER_CITY,
+   
+    # CategoryNameEnum.CHELSEA: CategorySlugEnum.CHELSEA,
+    # CategoryNameEnum.LIVERPOOL: CategorySlugEnum.LIVERPOOL,
+    # CategoryNameEnum.TOTTENHAM: CategorySlugEnum.TOTTENHAM,
+    # CategoryNameEnum.LEICESTER: CategorySlugEnum.LEICESTER,
+    # CategoryNameEnum.EVERTON: CategorySlugEnum.EVERTON,
+    # CategoryNameEnum.WEST_HAM: CategorySlugEnum.WEST_HAM,
+    # CategoryNameEnum.NEWCASTLE: CategorySlugEnum.NEWCASTLE,
 
-    # Other Major European Clubs
-    CategoryNameEnum.AJAX: CategorySlugEnum.AJAX,
-    CategoryNameEnum.PORTO: CategorySlugEnum.PORTO,
-    CategoryNameEnum.BENFICA: CategorySlugEnum.BENFICA,
-    CategoryNameEnum.CELTIC: CategorySlugEnum.CELTIC,
-    CategoryNameEnum.RANGERS: CategorySlugEnum.RANGERS,
+    # # La Liga (Spain)
+    # CategoryNameEnum.BARCELONA: CategorySlugEnum.BARCELONA,
+    # CategoryNameEnum.REAL_MADRID: CategorySlugEnum.REAL_MADRID,
+    # CategoryNameEnum.ATLETICO_MADRID: CategorySlugEnum.ATLETICO_MADRID,
+    # CategoryNameEnum.SEVILLA: CategorySlugEnum.SEVILLA,
+    # CategoryNameEnum.VALENCIA: CategorySlugEnum.VALENCIA,
+
+    # # Bundesliga (Germany)
+    # CategoryNameEnum.BAYERN_MUNICH: CategorySlugEnum.BAYERN_MUNICH,
+    # CategoryNameEnum.BORUSSIA_DORTMUND: CategorySlugEnum.BORUSSIA_DORTMUND,
+    # CategoryNameEnum.RB_LEIPZIG: CategorySlugEnum.RB_LEIPZIG,
+    # CategoryNameEnum.SCHALKE: CategorySlugEnum.SCHALKE,
+
+    # # Serie A (Italy)
+    # CategoryNameEnum.JUVENTUS: CategorySlugEnum.JUVENTUS,
+    # CategoryNameEnum.INTER_MILAN: CategorySlugEnum.INTER_MILAN,
+    # CategoryNameEnum.AC_MILAN: CategorySlugEnum.AC_MILAN,
+  
+    # CategoryNameEnum.ROMA: CategorySlugEnum.ROMA,
+
+    # # Ligue 1 (France)
+    # CategoryNameEnum.PSG: CategorySlugEnum.PSG,
+    # CategoryNameEnum.OLYMPIQUE_LYONNAIS: CategorySlugEnum.OLYMPIQUE_LYONNAIS,
+    
+
+    # # Other Major European Clubs
+    # CategoryNameEnum.AJAX: CategorySlugEnum.AJAX,
+    # CategoryNameEnum.PORTO: CategorySlugEnum.PORTO,
+    # CategoryNameEnum.BENFICA: CategorySlugEnum.BENFICA,
+    # CategoryNameEnum.CELTIC: CategorySlugEnum.CELTIC,
+    # CategoryNameEnum.RANGERS: CategorySlugEnum.RANGERS,
 }
 
 class Category(BaseModel):
